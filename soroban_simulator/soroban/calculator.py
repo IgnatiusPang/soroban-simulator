@@ -24,6 +24,7 @@ class Calculator:
         operations = {
             '+': self.soroban.add,
             '-': self.soroban.subtract,
+            '*': self.soroban.multiply,
         }
 
         for token in rpn_queue:

@@ -1,4 +1,3 @@
-
 from .calculation_step import CalculationStep
 
 class Soroban:
@@ -159,6 +158,39 @@ class Soroban:
             carry_rod_index = rod_index - 1
             if carry_rod_index >= 0:
                 steps.extend(self.add_to_rod(carry_rod_index, 1))
+        
+        return steps
+
+    def multiply(self, multiplier: int) -> list[CalculationStep]:
+        """Multiplies the current value by a number using the Modern Standard Method."""
+        multiplicand = self.get_value()
+        
+        multiplicand_str = str(multiplicand)
+        multiplier_str = str(multiplier)
+
+        mc_digits = [int(d) for d in reversed(multiplicand_str)]
+        mp_digits = [int(d) for d in reversed(multiplier_str)]
+
+        product_len = len(mc_digits) + len(mp_digits)
+        product_rods = [0] * product_len
+
+        for i, mc_digit in enumerate(mc_digits):
+            for j, mp_digit in enumerate(mp_digits):
+                pp = mc_digit * mp_digit
+                
+                product_rods[i+j] += pp
+                
+                carry = product_rods[i+j] // 10
+                product_rods[i+j] %= 10
+                if i+j+1 < product_len:
+                    product_rods[i+j+1] += carry
+
+        final_product_val = 0
+        for digit in reversed(product_rods):
+            final_product_val = final_product_val * 10 + digit
+            
+        self.clear()
+        steps = self.set_number(final_product_val)
         
         return steps
 
