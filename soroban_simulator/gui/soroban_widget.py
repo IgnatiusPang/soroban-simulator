@@ -13,6 +13,7 @@ class SorobanWidget(QWidget):
         self._start_state = list(self.soroban_state)
         self._target_state = list(self.soroban_state)
         self._animation_progress = 0.0
+        self.markers = []
 
         self._animation = QPropertyAnimation(self, b"animation_progress")
         self._animation.setDuration(400)
@@ -26,6 +27,11 @@ class SorobanWidget(QWidget):
         self.update()
 
     animation_progress = Property(float, _get_animation_progress, _set_animation_progress)
+
+    def set_markers(self, markers):
+        """Sets the markers to display on the soroban."""
+        self.markers = markers
+        self.update()
 
     def set_state(self, soroban_state: list[int]):
         """Sets the state of the soroban to display without animation."""
@@ -94,7 +100,6 @@ class SorobanWidget(QWidget):
         painter.drawLine(0, bar_y, self.width(), bar_y)
 
         for i in range(self.num_rods):
-            print(f"Rod {i}: value={self._target_state[i]}")
             rod_x = (i + 1) * rod_width
             painter.setPen(QPen(Qt.black, 2))
             painter.drawLine(rod_x, top_margin, rod_x, top_margin + rod_height)
@@ -116,3 +121,25 @@ class SorobanWidget(QWidget):
                 current_y = start_y + (end_y - start_y) * self._animation_progress
                 painter.setBrush(Qt.blue if j < self._target_state[i] % 5 else Qt.gray)
                 painter.drawEllipse(rod_x - bead_radius, current_y, bead_radius * 2, bead_radius * 2)
+
+        # Draw markers
+        if self.markers:
+            painter.setPen(QPen(Qt.red, 2, Qt.SolidLine))
+            font = painter.font()
+            font.setPointSize(10)
+            painter.setFont(font)
+            
+            for start_rod, end_rod, label in self.markers:
+                start_x = (start_rod + 0.5) * rod_width
+                end_x = (end_rod + 1.5) * rod_width
+                line_y = top_margin + rod_height + 20  # Below the soroban
+
+                # Draw the line
+                painter.drawLine(start_x, line_y, end_x, line_y)
+
+                # Draw the label
+                font_metrics = painter.fontMetrics()
+                text_width = font_metrics.horizontalAdvance(label)
+                text_x = start_x + (end_x - start_x) / 2 - text_width / 2
+                text_y = line_y + 15
+                painter.drawText(int(text_x), int(text_y), label)

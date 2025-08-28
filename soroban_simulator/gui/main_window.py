@@ -75,7 +75,39 @@ class MainWindow(QMainWindow):
         equation = self.equation_input.text()
         if not equation:
             return
+
+        self.soroban_widget.set_markers([]) # Clear existing markers
+
         try:
+            # Set markers for multiplication, following the Modern Standard Method.
+            if "*" in equation:
+                parts = self.calculator.parser.generate_rpn(equation)
+                operands = [p for p in parts if isinstance(p, int)]
+                if len(operands) == 2:
+                    # In RPN, the operands are pushed onto the stack first,
+                    # so the first operand is the multiplicand and the second is the multiplier.
+                    multiplicand, multiplier = operands[0], operands[1]
+                    
+                    multiplier_len = len(str(multiplier))
+                    multiplicand_len = len(str(multiplicand))
+
+                    # Position the multiplier on the far left (rod C, index 2).
+                    multiplier_rod_start = 2
+
+                    # Leave a gap of 2 rods after the multiplier.
+                    multiplicand_rod_start = multiplier_rod_start + multiplier_len + 2
+                    
+                    # The product is formed to the right of the multiplicand.
+                    product_rod_start = multiplicand_rod_start + multiplicand_len 
+                    product_len = multiplicand_len + multiplier_len
+
+                    markers = [
+                        (multiplier_rod_start, multiplier_rod_start + multiplier_len - 1, "Multiplier"),
+                        (multiplicand_rod_start, multiplicand_rod_start + multiplicand_len - 1, "Multiplicand"),
+                        (product_rod_start, product_rod_start + product_len - 1, "Partial Product")
+                    ]
+                    self.soroban_widget.set_markers(markers)
+
             self.steps, self.result = self.calculator.calculate(equation)
             self.current_step = 0
             
@@ -166,6 +198,7 @@ class MainWindow(QMainWindow):
         self.step_map = []
         self.current_step = 0
         self.calculator.soroban.clear()
+        self.soroban_widget.set_markers([])
         self.soroban_widget.set_state(self.calculator.soroban.get_state())
         self.step_description_label.setText("Step description:")
         self.current_value_label.setText("Current value:")
