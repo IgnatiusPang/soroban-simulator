@@ -161,37 +161,98 @@ class Soroban:
         
         return steps
 
+    def _get_interim_value(self) -> int:
+        """Gets the value from the rods, ignoring leading/trailing zeros."""
+        first = -1
+        last = -1
+        for i, r in enumerate(self.rods):
+            if r != 0:
+                if first == -1:
+                    first = i
+                last = i
+
+        if first == -1:
+            return 0
+
+        result_rods = self.rods[first:last+1]
+        value = 0
+        for rod in result_rods:
+            value = value * 10 + rod
+        return value
+
+    def _add_to_rods(self, start_rod_index: int, number: int) -> list[CalculationStep]:
+        """Helper to add a number to a set of rods, handling carries."""
+        steps = []
+        number_str = f"{number:02d}" # Assuming two-digit partial products
+        
+        for i, digit_char in enumerate(reversed(number_str)):
+            rod_index = start_rod_index + len(number_str) - 1 - i
+            digit = int(digit_char)
+            if rod_index >= 0:
+                steps.extend(self.add_to_rod(rod_index, digit))
+                
+        return steps
+
     def multiply(self, multiplier: int) -> list[CalculationStep]:
         """Multiplies the current value by a number using the Modern Standard Method."""
+        steps = []
         multiplicand = self.get_value()
         
-        multiplicand_str = str(multiplicand)
+        # Clear the soroban for the multiplication setup
+        steps.extend(self.clear())
+
         multiplier_str = str(multiplier)
+        multiplicand_str = str(multiplicand)
 
-        mc_digits = [int(d) for d in reversed(multiplicand_str)]
-        mp_digits = [int(d) for d in reversed(multiplier_str)]
+        # Setup on soroban (e.g., multiplier on C, multiplicand on FG for 13 rods)
+        multiplier_rod_start = 2
+        multiplicand_rod_start = 5
 
-        product_len = len(mc_digits) + len(mp_digits)
-        product_rods = [0] * product_len
+        # Set multiplier
+        steps.append(CalculationStep(f"Set multiplier {multiplier}", self.get_state(), self.get_value()))
+        for i, digit_char in enumerate(multiplier_str):
+            steps.extend(self._set_rod_value(multiplier_rod_start + i, int(digit_char)))
 
-        for i, mc_digit in enumerate(mc_digits):
-            for j, mp_digit in enumerate(mp_digits):
-                pp = mc_digit * mp_digit
+        # Set multiplicand
+        steps.append(CalculationStep(f"Set multiplicand {multiplicand}", self.get_state(), self.get_value()))
+        for i, digit_char in enumerate(multiplicand_str):
+            steps.extend(self._set_rod_value(multiplicand_rod_start + i, int(digit_char)))
+
+        # Multiplication
+        for i, mc_digit_char in enumerate(reversed(multiplicand_str)):
+            mc_digit = int(mc_digit_char)
+            mc_rod_index = multiplicand_rod_start + len(multiplicand_str) - 1 - i
+
+            for j, mp_digit_char in enumerate(multiplier_str):
+                mp_digit = int(mp_digit_char)
                 
-                product_rods[i+j] += pp
+                partial_product = mc_digit * mp_digit
                 
-                carry = product_rods[i+j] // 10
-                product_rods[i+j] %= 10
-                if i+j+1 < product_len:
-                    product_rods[i+j+1] += carry
+                pp_str = f"{partial_product:02d}"
+                pp_rod_start = mc_rod_index + j + 1
 
-        final_product_val = 0
-        for digit in reversed(product_rods):
-            final_product_val = final_product_val * 10 + digit
-            
-        self.clear()
-        steps = self.set_number(final_product_val)
-        
+                steps.append(CalculationStep(f"Multiply {mc_digit} x {mp_digit} = {pp_str}", self.get_state(), self.get_value()))
+                
+                steps.extend(self._add_to_rods(pp_rod_start, partial_product))
+
+            # Clear multiplicand digit
+            steps.append(CalculationStep(f"Clear multiplicand digit {mc_digit}", self.get_state(), self.get_value()))
+            steps.extend(self._set_rod_value(mc_rod_index, 0))
+
+        # Clear multiplier
+        steps.append(CalculationStep(f"Clear multiplier {multiplier}", self.get_state(), self.get_value()))
+        for i in range(len(multiplier_str)):
+            steps.extend(self._set_rod_value(multiplier_rod_start + i, 0))
+
+        # Get final product
+        final_product = self._get_interim_value()
+
+        # Set the final answer
+        steps.append(CalculationStep(f"Set final answer {final_product}", self.get_state(), self.get_value()))
+        steps.extend(self.set_number(final_product))
+
+        # Final result
+        steps.append(CalculationStep("Final result", self.get_state(), self.get_value()))
         return steps
 
     def subtract(self, number: int) -> list[CalculationStep]:

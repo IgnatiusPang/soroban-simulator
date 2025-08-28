@@ -13,7 +13,7 @@ class Calculator:
         self.soroban = Soroban(num_rods)
         self.parser = Parser()
 
-    def calculate(self, equation_string: str) -> list[CalculationStep]:
+    def calculate(self, equation_string: str) -> tuple[list[CalculationStep], int]:
         """Calculates the result of an equation string."""
         rpn_queue = self.parser.generate_rpn(equation_string)
         logging.info(f"RPN queue: {rpn_queue}")
@@ -63,5 +63,6 @@ class Calculator:
         if len(result_stack) != 1:
             raise ValueError("Invalid expression: the final stack should have one number.")
 
+        final_result = result_stack[0]
         logging.info(f"Final steps: {[step.step_description for step in steps]}")
-        return steps
+        return steps, final_result

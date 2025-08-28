@@ -76,7 +76,7 @@ class MainWindow(QMainWindow):
         if not equation:
             return
         try:
-            self.steps = self.calculator.calculate(equation)
+            self.steps, self.result = self.calculator.calculate(equation)
             self.current_step = 0
             
             self.steps_list_widget.clear()
