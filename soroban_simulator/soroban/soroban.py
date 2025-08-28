@@ -18,144 +18,191 @@ class Soroban:
 
     def get_state(self) -> list[int]:
         """Returns a data structure representing bead positions for rendering."""
-        return self.rods
+        return list(self.rods)
 
     def clear(self) -> list[CalculationStep]:
         """Resets all rods to 0."""
-        self.rods = [0] * self.num_rods
-        return [
+        steps = []
+        if any(rod != 0 for rod in self.rods):
+            # Create a temporary state for clearing to have a start and end
+            start_state = self.get_state()
+            self.rods = [0] * self.num_rods
+            end_state = self.get_state()
+            
+            steps.append(
+                CalculationStep(
+                    step_description="Clear the soroban",
+                    soroban_state=end_state,
+                    current_value=0,
+                )
+            )
+        else:
+            steps.append(
+                CalculationStep(
+                    step_description="Soroban is already clear",
+                    soroban_state=self.get_state(),
+                    current_value=self.get_value(),
+                )
+            )
+        return steps
+
+    def _set_rod_value(self, rod_index: int, digit: int) -> list[CalculationStep]:
+        """Sets a single rod to a specific digit, generating a single step with a detailed description."""
+        steps = []
+        current_digit = self.rods[rod_index]
+
+        if current_digit == digit:
+            return steps
+
+        descriptions = []
+        
+        # Heaven bead movement
+        if current_digit >= 5 and digit < 5:
+            descriptions.append("1 heaven bead up")
+        elif current_digit < 5 and digit >= 5:
+            descriptions.append("1 heaven bead down")
+
+        # Earth beads movement
+        current_earth_beads = current_digit % 5
+        target_earth_beads = digit % 5
+        diff = target_earth_beads - current_earth_beads
+
+        if diff != 0:
+            bead_word = "bead" if abs(diff) == 1 else "beads"
+            direction = "up" if diff > 0 else "down"
+            descriptions.append(f"{abs(diff)} earth {bead_word} {direction}")
+
+        if not descriptions:
+            return steps
+
+        full_description = f"Move {' and '.join(descriptions)} on rod {self.num_rods - rod_index}"
+        
+        self.rods[rod_index] = digit
+        steps.append(
             CalculationStep(
-                step_description="Clear the soroban",
+                step_description=full_description,
                 soroban_state=self.get_state(),
                 current_value=self.get_value(),
             )
-        ]
+        )
+        return steps
 
     def set_number(self, number: int) -> list[CalculationStep]:
-        """Sets a number on the abacus, digit by digit."""
+        """Sets a number on the abacus, digit by digit, with granular steps."""
         steps = self.clear()
         number_str = str(number)
+
+        steps.append(
+            CalculationStep(
+                step_description=f"Setting number: {number}",
+                soroban_state=self.get_state(),
+                current_value=self.get_value(),
+            )
+        )
 
         for i, digit_char in enumerate(reversed(number_str)):
             rod_index = self.num_rods - 1 - i
             if rod_index < 0:
                 break
             digit = int(digit_char)
-            self.rods[rod_index] = digit
-            steps.append(
-                CalculationStep(
-                    step_description=f"Set rod {self.num_rods - i} to {digit}",
-                    soroban_state=self.get_state(),
-                    current_value=self.get_value(),
-                )
+            steps.extend(self._set_rod_value(rod_index, digit))
+        
+        steps.append(
+            CalculationStep(
+                step_description=f"Finished setting {number}",
+                soroban_state=self.get_state(),
+                current_value=self.get_value(),
             )
+        )
         return steps
 
     def add(self, number: int) -> list[CalculationStep]:
-        """Adds a number to the abacus."""
-        steps = []
+        """Adds a number to the abacus with granular steps."""
+        steps = [
+            CalculationStep(
+                step_description=f"Adding: {number}",
+                soroban_state=self.get_state(),
+                current_value=self.get_value(),
+            )
+        ]
         number_str = str(number)
-        carry = 0
-
+        
         for i, digit_char in enumerate(reversed(number_str)):
             rod_index = self.num_rods - 1 - i
+            if rod_index < 0:
+                break
+            
             digit = int(digit_char)
+            steps.extend(self.add_to_rod(rod_index, digit))
 
-            new_value = self.rods[rod_index] + digit + carry
-            carry = 1 if new_value >= 10 else 0
-            self.rods[rod_index] = new_value % 10
-
-            steps.append(
-                CalculationStep(
-                    step_description=f"Add {digit} to rod {self.num_rods - i}",
-                    soroban_state=self.get_state(),
-                    current_value=self.get_value(),
-                )
+        steps.append(
+            CalculationStep(
+                step_description=f"Finished adding {number}",
+                soroban_state=self.get_state(),
+                current_value=self.get_value(),
             )
+        )
+        return steps
 
-            if carry > 0:
-                steps.append(
-                    CalculationStep(
-                        step_description=f"Carry over 1 to rod {self.num_rods - i - 1}",
-                        soroban_state=self.get_state(),
-                        current_value=self.get_value(),
-                    )
-                )
+    def add_to_rod(self, rod_index: int, value: int) -> list[CalculationStep]:
+        """Helper to add a value to a rod, handling carries."""
+        steps = []
+        current_rod_value = self.rods[rod_index]
+        new_rod_value = current_rod_value + value
 
-        # Handle remaining carry
-        i = len(number_str)
-        while carry > 0 and self.num_rods - 1 - i >= 0:
-            rod_index = self.num_rods - 1 - i
-            new_value = self.rods[rod_index] + carry
-            carry = 1 if new_value >= 10 else 0
-            self.rods[rod_index] = new_value % 10
-            steps.append(
-                CalculationStep(
-                    step_description=f"Add carry to rod {self.num_rods - i}",
-                    soroban_state=self.get_state(),
-                    current_value=self.get_value(),
-                )
-            )
-            i += 1
-
+        if new_rod_value < 10:
+            steps.extend(self._set_rod_value(rod_index, new_rod_value))
+        else:
+            complement = 10 - value
+            steps.extend(self._set_rod_value(rod_index, self.rods[rod_index] - complement))
+            
+            carry_rod_index = rod_index - 1
+            if carry_rod_index >= 0:
+                steps.extend(self.add_to_rod(carry_rod_index, 1))
+        
         return steps
 
     def subtract(self, number: int) -> list[CalculationStep]:
-        """Subtracts a number from the abacus."""
-        steps = []
+        """Subtracts a number from the abacus with granular steps."""
+        steps = [
+            CalculationStep(
+                step_description=f"Subtracting: {number}",
+                soroban_state=self.get_state(),
+                current_value=self.get_value(),
+            )
+        ]
         number_str = str(number)
-        borrow = 0
 
         for i, digit_char in enumerate(reversed(number_str)):
             rod_index = self.num_rods - 1 - i
+            if rod_index < 0:
+                break
+            
             digit = int(digit_char)
+            steps.extend(self.subtract_from_rod(rod_index, digit))
 
-            new_value = self.rods[rod_index] - digit - borrow
-            
-            if new_value < 0:
-                borrow = 1
-                self.rods[rod_index] = new_value + 10
-            else:
-                borrow = 0
-                self.rods[rod_index] = new_value
-
-            steps.append(
-                CalculationStep(
-                    step_description=f"Subtract {digit} from rod {self.num_rods - i}",
-                    soroban_state=self.get_state(),
-                    current_value=self.get_value(),
-                )
+        steps.append(
+            CalculationStep(
+                step_description=f"Finished subtracting {number}",
+                soroban_state=self.get_state(),
+                current_value=self.get_value(),
             )
+        )
+        return steps
 
-            if borrow > 0:
-                steps.append(
-                    CalculationStep(
-                        step_description=f"Borrow 1 from rod {self.num_rods - i - 1}",
-                        soroban_state=self.get_state(),
-                        current_value=self.get_value(),
-                    )
-                )
+    def subtract_from_rod(self, rod_index: int, value: int) -> list[CalculationStep]:
+        """Helper to subtract a value from a rod, handling borrows."""
+        steps = []
+        current_rod_value = self.rods[rod_index]
 
-        # Handle remaining borrow
-        i = len(number_str)
-        while borrow > 0 and self.num_rods - 1 - i >= 0:
-            rod_index = self.num_rods - 1 - i
-            new_value = self.rods[rod_index] - borrow
-            
-            if new_value < 0:
-                borrow = 1
-                self.rods[rod_index] = new_value + 10
-            else:
-                borrow = 0
-                self.rods[rod_index] = new_value
+        if current_rod_value >= value:
+            steps.extend(self._set_rod_value(rod_index, current_rod_value - value))
+        else:
+            complement = 10 - value
+            steps.extend(self._set_rod_value(rod_index, self.rods[rod_index] + complement))
 
-            steps.append(
-                CalculationStep(
-                    step_description=f"Subtract borrow from rod {self.num_rods - i}",
-                    soroban_state=self.get_state(),
-                    current_value=self.get_value(),
-                )
-            )
-            i += 1
-
+            borrow_rod_index = rod_index - 1
+            if borrow_rod_index >= 0:
+                steps.extend(self.subtract_from_rod(borrow_rod_index, 1))
+        
         return steps

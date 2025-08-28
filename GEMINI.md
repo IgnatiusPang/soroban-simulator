@@ -4,7 +4,8 @@
 * Always run the app using virtual environments e.g.
 
 ```{bash}
-venv/bin/python3 -m pip install PySide6
+venv/bin/python3 -m soroban_simulator.main
+
 
 ```
 ## Important Record keeping

@@ -1,7 +1,9 @@
+
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox, QListWidget
 from PySide6.QtCore import Qt
 from .soroban_widget import SorobanWidget
 from soroban_simulator.soroban.calculator import Calculator
+from soroban_simulator.soroban.calculation_step import CalculationStep
 
 class MainWindow(QMainWindow):
     """The main window of the Soroban Simulator."""
@@ -13,7 +15,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Soroban Simulator")
 
         self.calculator = Calculator()
-        self.steps = []
+        self.steps: list[CalculationStep] = []
+        self.display_steps: list[CalculationStep] = []
+        self.step_map: list[int] = []
         self.current_step = 0
 
         # Create widgets
@@ -74,9 +78,17 @@ class MainWindow(QMainWindow):
         try:
             self.steps = self.calculator.calculate(equation)
             self.current_step = 0
+            
             self.steps_list_widget.clear()
-            for step in self.steps:
-                self.steps_list_widget.addItem(step.step_description)
+            self.display_steps = []
+            self.step_map = []
+            
+            for i, step in enumerate(self.steps):
+                if step.step_description:
+                    self.step_map.append(i)
+                    self.display_steps.append(step)
+                    self.steps_list_widget.addItem(step.step_description)
+
             self.update_step_display(animated=False)
         except ValueError as e:
             QMessageBox.warning(self, "Error", str(e))
@@ -95,9 +107,11 @@ class MainWindow(QMainWindow):
 
     def go_to_step(self, row):
         """Goes to a specific step when the user clicks on the list."""
-        if 0 <= row < len(self.steps) and self.current_step != row:
-            self.current_step = row
-            self.update_step_display()
+        if 0 <= row < len(self.display_steps):
+            new_step_index = self.step_map[row]
+            if self.current_step != new_step_index:
+                self.current_step = new_step_index
+                self.update_step_display()
 
     def update_step_display(self, animated=True):
         """Updates the display with the current step's information."""
@@ -119,7 +133,19 @@ class MainWindow(QMainWindow):
 
         self.step_description_label.setText(f"Step description: {step.step_description}")
         self.current_value_label.setText(f"Current value: {step.current_value}")
-        self.steps_list_widget.setCurrentRow(self.current_step)
+        
+        # Update list widget selection
+        display_row = -1
+        for i, step_index in enumerate(self.step_map):
+            if step_index >= self.current_step:
+                if step_index == self.current_step:
+                    display_row = i
+                else:
+                    display_row = i -1
+                break
+        
+        if display_row != -1:
+            self.steps_list_widget.setCurrentRow(display_row)
 
     def on_animation_finished(self):
         """Called when the soroban animation finishes."""
@@ -136,6 +162,8 @@ class MainWindow(QMainWindow):
         """Resets the application to its initial state."""
         self.equation_input.clear()
         self.steps = []
+        self.display_steps = []
+        self.step_map = []
         self.current_step = 0
         self.calculator.soroban.clear()
         self.soroban_widget.set_state(self.calculator.soroban.get_state())
