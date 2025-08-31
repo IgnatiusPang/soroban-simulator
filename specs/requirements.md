@@ -5,6 +5,7 @@ This document outlines the functional and technical requirements for the Soroban
 ## 1. Functional Requirements
 
 The application must provide the following capabilities to the end-user:
+* Here I am labeling rods 1 - 13 from right to left, rod 1 with smallest value (e.g. 1's) and rod 13 largest value (e.g. 1 x 10^12). 
 
 *   **Equation Input:** The user must be able to input a mathematical expression as a string.
     *   Initial scope includes positive integers, addition (+), and subtraction (-).
@@ -23,7 +24,6 @@ The application must provide the following capabilities to the end-user:
 ## 2. Technical Requirements
 
 The application must adhere to the following technical specifications:
-
 *   **Framework:** The Graphical User Interface (GUI) must be built using the PySide6 framework.
 *   **Architecture:** The application must have a modular design, strictly separating the core calculation logic from the GUI presentation layer.
 *   **Testability:** The core logic must have near-complete or complete unit test coverage to ensure accuracy and reliability.

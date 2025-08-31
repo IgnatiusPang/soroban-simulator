@@ -102,18 +102,20 @@ class SorobanWidget(QWidget):
         painter.drawLine(0, bar_y, self.width(), bar_y)
 
         for i in range(self.num_rods):
+            # Reverse the rod order for display: rightmost rod (highest index) should be leftmost on screen
+            display_rod_index = self.num_rods - 1 - i
             rod_x = (i + 1) * rod_width
             painter.setPen(QPen(Qt.black, 2))
             painter.drawLine(rod_x, top_margin, rod_x, top_margin + rod_height)
 
-            start_positions = self._get_bead_y_positions(self._start_state[i], rod_height, top_margin, bar_y, bar_height, bead_radius)
-            end_positions = self._get_bead_y_positions(self._target_state[i], rod_height, top_margin, bar_y, bar_height, bead_radius)
+            start_positions = self._get_bead_y_positions(self._start_state[display_rod_index], rod_height, top_margin, bar_y, bar_height, bead_radius)
+            end_positions = self._get_bead_y_positions(self._target_state[display_rod_index], rod_height, top_margin, bar_y, bar_height, bead_radius)
 
             # Heaven bead
             start_y = start_positions[4]
             end_y = end_positions[4]
             current_y = start_y + (end_y - start_y) * self._animation_progress
-            painter.setBrush(Qt.blue if self._target_state[i] >= 5 else Qt.gray)
+            painter.setBrush(Qt.blue if self._target_state[display_rod_index] >= 5 else Qt.gray)
             painter.drawEllipse(rod_x - bead_radius, current_y, bead_radius * 2, bead_radius * 2)
 
             # Earth beads
@@ -121,7 +123,7 @@ class SorobanWidget(QWidget):
                 start_y = start_positions[j]
                 end_y = end_positions[j]
                 current_y = start_y + (end_y - start_y) * self._animation_progress
-                painter.setBrush(Qt.blue if j < self._target_state[i] % 5 else Qt.gray)
+                painter.setBrush(Qt.blue if j < self._target_state[display_rod_index] % 5 else Qt.gray)
                 painter.drawEllipse(rod_x - bead_radius, current_y, bead_radius * 2, bead_radius * 2)
 
         # Draw markers with different vertical positions and color-blind safe colors
@@ -142,8 +144,12 @@ class SorobanWidget(QWidget):
             base_y = top_margin + rod_height + 10
             
             for i, (start_rod, end_rod, label) in enumerate(self.markers):
-                start_x = (start_rod + 0.5) * rod_width
-                end_x = (end_rod + 1.5) * rod_width
+                # Convert rod indices to display positions (reversed)
+                display_start_rod = self.num_rods - 1 - end_rod
+                display_end_rod = self.num_rods - 1 - start_rod
+                
+                start_x = (display_start_rod + 0.5) * rod_width
+                end_x = (display_end_rod + 1.5) * rod_width
                 line_y = base_y + i * marker_row_height
                 
                 # Use different color for each marker type
