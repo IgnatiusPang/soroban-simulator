@@ -194,7 +194,7 @@ class Soroban:
         for i, digit_char in enumerate(reversed(number_str)):
             rod_index = start_rod_index + len(number_str) - 1 - i
             digit = int(digit_char)
-            if rod_index >= 0:
+            if rod_index >= 0 and rod_index < self.num_rods:
                 steps.extend(self.add_to_rod(rod_index, digit))
                 
         return steps
@@ -234,18 +234,32 @@ class Soroban:
         # Place result starting from the rightmost rods
         result_start_rod = self.num_rods - result_length
         
-        for i, mc_digit_char in enumerate(reversed(multiplicand_str)):
+        # Process multiplicand digits from left to right (most significant to least significant)
+        for i, mc_digit_char in enumerate(multiplicand_str):
             mc_digit = int(mc_digit_char)
-            mc_rod_index = multiplicand_rod_start + len(multiplicand_str) - 1 - i
+            mc_rod_index = multiplicand_rod_start + i
 
             for j, mp_digit_char in enumerate(multiplier_str):
                 mp_digit = int(mp_digit_char)
                 
                 partial_product = mc_digit * mp_digit
                 
-                # Place partial product with correct place value in the result area
-                # Position based on the digit positions to ensure correct place value
-                pp_rod_start = result_start_rod + (len(multiplicand_str) - 1 - i) + j
+                # Calculate the correct position for this partial product
+                # For 51 × 3 = 153:
+                # - 5 (tens place) × 3 = 15 should contribute 150, so place at rod 10
+                # - 1 (ones place) × 3 = 3 should contribute 3, so place at rod 12
+                
+                # Calculate the decimal place of this partial product in the final result
+                multiplicand_place = len(multiplicand_str) - 1 - i  # 0 for ones, 1 for tens, etc.
+                multiplier_place = len(multiplier_str) - 1 - j
+                combined_place = multiplicand_place + multiplier_place
+                
+                # For the partial product placement, we need to consider that:
+                # - A 2-digit partial product like 15 needs to be placed so its rightmost digit
+                #   aligns with the correct decimal place
+                # - So for combined_place=1 (tens), we place 15 starting at rod 10
+                #   so that 1 goes to rod 10 and 5 goes to rod 11
+                pp_rod_start = self.num_rods - len(str(partial_product)) - combined_place
 
                 steps.append(CalculationStep(f"Multiply {mc_digit} x {mp_digit} = {partial_product}", self.get_state(), self.get_value()))
                 
