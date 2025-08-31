@@ -1,4 +1,3 @@
-
 import sys
 from PySide6.QtWidgets import QApplication
 from soroban_simulator.gui.main_window import MainWindow

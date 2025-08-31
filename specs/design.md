@@ -23,6 +23,7 @@ Represents the state of the abacus and generates granular bead movements.
 *   `set_number(self, number)`: Returns a list of `CalculationStep` objects for setting a number on the abacus, digit by digit.
 *   `add(self, number)`: Returns a list of `CalculationStep` objects detailing every bead movement (including complements and carries) required for the addition.
 *   `subtract(self, number)`: Returns a list of `CalculationStep` objects detailing every bead movement (including borrows) for the subtraction.
+*   `multiply(self, number)`: Returns a list of `CalculationStep` objects detailing every bead movement for the multiplication using the Modern Standard Method.
 
 ### 1.2. CalculationStep Class
 
@@ -57,7 +58,7 @@ Orchestrates the calculation by evaluating the RPN queue.
     *   Generates the RPN queue using the parser.
     *   Initializes a main steps list and an intermediate results stack.
     *   Iterates through the RPN queue, performing sub-calculations for each operator.
-    *   For each sub-calculation, it calls the appropriate `Soroban` methods (`set_number`, `add`, `subtract`) and extends the main steps list with the granular `CalculationStep` objects returned.
+    *   For each sub-calculation, it calls the appropriate `Soroban` methods (`set_number`, `add`, `subtract`, `multiply`) and extends the main steps list with the granular `CalculationStep` objects returned.
     *   Returns the final, complete list of all granular steps in the correct order.
 
 ## 2. Graphical User Interface (GUI)
@@ -73,6 +74,7 @@ The `unittest` framework will be used.
 
 *   **TestSoroban:** Will verify that the `add` and `subtract` methods return the correct sequence of `CalculationStep` objects for various scenarios.
 *   **TestParser:** Will verify the correct RPN output for equations with and without brackets.
+*   **TestModernMultiplication:** Will verify that the `multiply` method returns the correct sequence of `CalculationStep` objects for the Modern Standard Method.
 *   **TestCalculator:** Will verify that the final aggregated list of steps is correct for a complete equation.
 
 ## 4. Project Structure
@@ -93,5 +95,6 @@ soroban_simulator/
     ├── __init__.py
     ├── test_soroban.py
     ├── test_parser.py
-    └── test_calculator.py
+    ├── test_calculator.py
+    └── test_modern_multiplication.py
 ```
