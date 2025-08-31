@@ -90,7 +90,9 @@ class SorobanWidget(QWidget):
         painter.fillRect(self.rect(), Qt.white)
 
         rod_width = self.width() / (self.num_rods + 1)
-        rod_height = self.height() * 0.8
+        # Reserve more space at bottom for marker rows
+        marker_space = self.height() * 0.15  # 15% for markers
+        rod_height = self.height() * 0.7     # Reduced from 0.8 to 0.7
         top_margin = self.height() * 0.1
         bar_height = 4
         bar_y = top_margin + rod_height * 0.3
@@ -122,20 +124,34 @@ class SorobanWidget(QWidget):
                 painter.setBrush(Qt.blue if j < self._target_state[i] % 5 else Qt.gray)
                 painter.drawEllipse(rod_x - bead_radius, current_y, bead_radius * 2, bead_radius * 2)
 
-        # Draw markers
+        # Draw markers with different vertical positions and color-blind safe colors
         if self.markers:
-            painter.setPen(QPen(Qt.red, 2, Qt.SolidLine))
             font = painter.font()
             font.setPointSize(10)
             painter.setFont(font)
             
-            for start_rod, end_rod, label in self.markers:
+            # Color-blind safe colors: Blue, Orange, Green
+            marker_colors = [
+                QColor(0, 114, 178),    # Blue for M1 (multiplier)
+                QColor(230, 159, 0),    # Orange for M2 (multiplicand) 
+                QColor(0, 158, 115)     # Green for PP (partial products)
+            ]
+            
+            # Stack markers vertically to avoid overlap
+            marker_row_height = 25
+            base_y = top_margin + rod_height + 10
+            
+            for i, (start_rod, end_rod, label) in enumerate(self.markers):
                 start_x = (start_rod + 0.5) * rod_width
                 end_x = (end_rod + 1.5) * rod_width
-                line_y = top_margin + rod_height + 20  # Below the soroban
+                line_y = base_y + i * marker_row_height
+                
+                # Use different color for each marker type
+                color = marker_colors[i % len(marker_colors)]
+                painter.setPen(QPen(color, 2, Qt.SolidLine))
 
                 # Draw the line
-                painter.drawLine(start_x, line_y, end_x, line_y)
+                painter.drawLine(int(start_x), int(line_y), int(end_x), int(line_y))
 
                 # Draw the label
                 font_metrics = painter.fontMetrics()

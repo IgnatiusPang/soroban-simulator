@@ -102,9 +102,9 @@ class MainWindow(QMainWindow):
                     product_len = multiplicand_len + multiplier_len
 
                     markers = [
-                        (multiplier_rod_start, multiplier_rod_start + multiplier_len - 1, "Multiplier"),
-                        (multiplicand_rod_start, multiplicand_rod_start + multiplicand_len - 1, "Multiplicand"),
-                        (product_rod_start, product_rod_start + product_len - 1, "Partial Product")
+                        (multiplier_rod_start, multiplier_rod_start + multiplier_len - 1, "M1"),
+                        (multiplicand_rod_start, multiplicand_rod_start + multiplicand_len - 1, "M2"),
+                        (product_rod_start, product_rod_start + product_len - 1, "PP")
                     ]
                     self.soroban_widget.set_markers(markers)
 
