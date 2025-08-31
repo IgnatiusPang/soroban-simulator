@@ -1,3 +1,4 @@
+
 import unittest
 import sys
 import os
@@ -18,76 +19,70 @@ class TestMultiplicationPositioning(unittest.TestCase):
     def test_5_times_15_positioning(self):
         """Test the positioning for 5 × 15 = 75.
         
-        Expected positioning:
-        - M1 = 15 should be on rods 10-11 (from left, 1-indexed)
-        - M2 = 5 should be on rod 8 (from left, 1-indexed)
-        - PP = 75 should be on rods 1-2 (from left, 1-indexed)
-        
-        Note: Internal rod indexing is 0-based, so:
-        - Rod 10-11 (1-indexed) = indices 9-10 (0-indexed)
-        - Rod 8 (1-indexed) = index 7 (0-indexed)
-        - Rod 1-2 (1-indexed) = indices 0-1 (0-indexed)
+        Expected positioning according to requirements:
+        - Rods numbered 1-13 from right to left
+        - Rod 1 = rightmost = smallest value (1's place)
+        - Rod 13 = leftmost = largest value (10^12 place)
+        - M1 = 15 should be on rods 10-11 (indices 9-10)
+        - M2 = 5 should be on rod 8 (index 7)
+        - PP = 75 should be on rods 1-2 (indices 0-1)
         """
         # Set up the multiplication: 5 × 15
         steps = self.calculator.calculate("5 * 15")
         
-        # Find the step where M1 (multiplier = 15) is set
-        m1_step = None
-        for step in steps:
+        # Find the step where M1 (multiplier = 15) is fully set
+        m1_setup_step = None
+        m1_after_setup_step = None
+        for i, step in enumerate(steps):
             if "Set multiplier 15" in step.step_description:
-                m1_step = step
+                m1_setup_step = step
+                # Look for the step after M1 is fully placed
+                if i + 2 < len(steps):  # Skip the individual digit placement steps
+                    m1_after_setup_step = steps[i + 2]  # After placing both digits of 15
                 break
         
-        self.assertIsNotNone(m1_step, "M1 (multiplier 15) setup step not found")
+        self.assertIsNotNone(m1_setup_step, "M1 (multiplier 15) setup step not found")
+        self.assertIsNotNone(m1_after_setup_step, "M1 (multiplier 15) after setup step not found")
         
-        # Check M1 positioning - should be on rods 10-11 (indices 9-10)
-        # In a 13-rod soroban, multiplier should be positioned at rods 2-3 (0-indexed)
-        # which corresponds to rods 3-4 (1-indexed from left)
-        # But according to the requirement, M1=15 should be on rods 10-11 (1-indexed)
-        # So we need to check indices 9-10 (0-indexed)
-        
-        # Let's trace through the actual positioning in the code
-        # The multiply method sets multiplier_rod_start = 2 (0-indexed)
-        # So for 15, it should occupy rods 2-3 (0-indexed) = rods 3-4 (1-indexed)
-        
-        # However, the test requirement states M1=15 should be on rods 10-11
-        # This suggests we need to adjust the positioning logic
-        
-        # For now, let's verify the current implementation and document the expected behavior
+        # Check M1 positioning after it's fully set
         expected_m1_rods = [9, 10]  # 0-indexed positions for rods 10-11 (1-indexed)
         
-        # Find where 15 is actually placed
+        # Find where 15 is actually placed after setup
         m1_actual_positions = []
-        if m1_step is not None:
-            for i, value in enumerate(m1_step.soroban_state):
-                if value != 0:
-                    m1_actual_positions.append(i)
+        for i, value in enumerate(m1_after_setup_step.soroban_state):
+            if value != 0 and i in expected_m1_rods:  # Check if values are in expected M1 positions
+                m1_actual_positions.append(i)
         
-        # Document current vs expected positioning
-        print(f"M1 (15) current positions: {m1_actual_positions}")
+        print(f"M1 (15) positions after setup: {m1_actual_positions}")
         print(f"M1 (15) expected positions: {expected_m1_rods}")
+        print(f"M1 (15) state after setup: {m1_after_setup_step.soroban_state}")
         
-        # Find the step where M2 (multiplicand = 5) is set
-        m2_step = None
-        for step in steps:
+        # Find the step where M2 (multiplicand = 5) is fully set
+        m2_setup_step = None
+        m2_after_setup_step = None
+        for i, step in enumerate(steps):
             if "Set multiplicand 5" in step.step_description:
-                m2_step = step
+                m2_setup_step = step
+                # Look for the step after M2 is fully placed
+                if i + 1 < len(steps):
+                    m2_after_setup_step = steps[i + 1]  # After placing the single digit 5
                 break
         
-        self.assertIsNotNone(m2_step, "M2 (multiplicand 5) setup step not found")
+        self.assertIsNotNone(m2_setup_step, "M2 (multiplicand 5) setup step not found")
+        self.assertIsNotNone(m2_after_setup_step, "M2 (multiplicand 5) after setup step not found")
         
-        # Check M2 positioning - should be on rod 8 (index 7)
+        # Check M2 positioning after it's fully set
         expected_m2_rod = 7  # 0-indexed position for rod 8 (1-indexed)
         
-        # Find where 5 is actually placed
+        # Find where 5 is actually placed after setup
         m2_actual_positions = []
-        if m2_step is not None:
-            for i, value in enumerate(m2_step.soroban_state):
-                if value != 0:
-                    m2_actual_positions.append(i)
+        for i, value in enumerate(m2_after_setup_step.soroban_state):
+            if value != 0 and i == expected_m2_rod:  # Check if value is in expected M2 position
+                m2_actual_positions.append(i)
         
-        print(f"M2 (5) current positions: {m2_actual_positions}")
+        print(f"M2 (5) positions after setup: {m2_actual_positions}")
         print(f"M2 (5) expected position: [{expected_m2_rod}]")
+        print(f"M2 (5) state after setup: {m2_after_setup_step.soroban_state}")
         
         # Check final result positioning - PP = 75 should be on rods 1-2 (indices 0-1)
         final_step = steps[-1]
@@ -99,44 +94,36 @@ class TestMultiplicationPositioning(unittest.TestCase):
             if value != 0:
                 pp_actual_positions.append(i)
         
-        print(f"PP (75) current positions: {pp_actual_positions}")
+        print(f"PP (75) final positions: {pp_actual_positions}")
         print(f"PP (75) expected positions: {expected_pp_rods}")
+        print(f"PP (75) final state: {final_step.soroban_state}")
         
         # Verify the final result is correct
         self.assertEqual(final_step.current_value, 75, "Final multiplication result should be 75")
         
-        # Document the current vs expected positioning
-        print(f"\nCURRENT POSITIONING ANALYSIS:")
-        print(f"M1 (15): Currently at positions {m1_actual_positions}, Expected at {expected_m1_rods}")
-        print(f"M2 (5): Currently at positions {m2_actual_positions}, Expected at [{expected_m2_rod}]")
-        print(f"PP (75): Currently at positions {pp_actual_positions}, Expected at {expected_pp_rods}")
+        # Test the positioning requirements
+        print(f"\nPOSITIONING VERIFICATION:")
         
-        # Test current positioning behavior (documenting actual behavior)
-        # M1 (multiplier 15) is currently not being placed correctly - it shows empty positions
-        # This suggests the multiplier is cleared before we can capture its position
+        # M1 positioning: Should have 1 at index 9 and 5 at index 10 after setup
+        m1_correct = (len(m1_actual_positions) == 2 and 
+                     set(m1_actual_positions) == set(expected_m1_rods))
+        print(f"M1 (15) positioned correctly: {m1_correct}")
         
-        # M2 (multiplicand 5) is currently at positions [2, 3] (rods 3-4 in 1-indexed)
-        # But should be at position [7] (rod 8 in 1-indexed)
+        # M2 positioning: Should have 5 at index 7 after setup  
+        m2_correct = (len(m2_actual_positions) == 1 and 
+                     m2_actual_positions[0] == expected_m2_rod)
+        print(f"M2 (5) positioned correctly: {m2_correct}")
         
-        # PP (75) is currently at positions [11, 12] (rods 12-13 in 1-indexed)
-        # But should be at positions [0, 1] (rods 1-2 in 1-indexed)
+        # PP positioning: Should have result at indices 0-1
+        pp_correct = set(pp_actual_positions) == set(expected_pp_rods)
+        print(f"PP (75) positioned correctly: {pp_correct}")
         
-        # For now, we'll assert the current behavior to document it
-        # These tests will need to be updated when positioning logic is corrected
+        # Assert the positioning requirements
+        self.assertTrue(m1_correct, f"M1 (15) should be at positions {expected_m1_rods}, but found at {m1_actual_positions}")
+        self.assertTrue(m2_correct, f"M2 (5) should be at position [{expected_m2_rod}], but found at {m2_actual_positions}")
+        self.assertTrue(pp_correct, f"PP (75) should be at positions {expected_pp_rods}, but found at {pp_actual_positions}")
         
-        # Current behavior assertions:
-        self.assertEqual(final_step.current_value, 75, "Final multiplication result should be 75")
-        
-        # The positioning is currently not matching requirements, so we document this
-        positioning_matches_requirements = (
-            set(m1_actual_positions) == set(expected_m1_rods) and
-            m2_actual_positions == [expected_m2_rod] and
-            set(pp_actual_positions) == set(expected_pp_rods)
-        )
-        
-        if not positioning_matches_requirements:
-            print(f"\nWARNING: Current positioning does not match requirements!")
-            print(f"This test documents the current behavior for future reference.")
+        print(f"\n✓ All positioning requirements met for 5 × 15 = 75!")
 
     def test_rod_indexing_conversion(self):
         """Test the conversion between 1-indexed (user-facing) and 0-indexed (internal) rod positions."""
@@ -278,9 +265,9 @@ class TestMultiplicationPositioning(unittest.TestCase):
         # For now, we verify that the multiplication works correctly
         self.assertTrue(final_step.current_value == 75, "Core multiplication logic works")
         
-        # Future assertion (to be enabled when positioning is fixed):
-        # self.assertEqual(set(actual_pp_positions), set(expected_pp_indices), 
-        #                 "PP (75) should be positioned on rods 1-2")
+        # Test the positioning requirements (should now pass after the fix)
+        self.assertEqual(set(actual_pp_positions), set(expected_pp_indices), 
+                        "PP (75) should be positioned on rods 1-2")
 
 
     def test_37_times_7_positioning(self):
@@ -475,9 +462,9 @@ class TestMultiplicationPositioning(unittest.TestCase):
         # For now, we verify that the multiplication works correctly
         self.assertTrue(final_step.current_value == 259, "Core multiplication logic works")
         
-        # Future assertions (to be enabled when positioning is fixed):
-        # self.assertEqual(set(actual_pp_positions), set(expected_pp_indices), 
-        #                 "PP (259) should be positioned on rods 1-3")
+        # Test the positioning requirements (should now pass after the fix)
+        self.assertEqual(set(actual_pp_positions), set(expected_pp_indices), 
+                        "PP (259) should be positioned on rods 1-3")
 
     def test_positioning_requirements_37_times_7(self):
         """Document the specific positioning requirements for 37 × 7 = 259."""

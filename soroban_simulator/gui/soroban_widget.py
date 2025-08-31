@@ -145,16 +145,25 @@ class SorobanWidget(QWidget):
             
             for i, (start_rod, end_rod, label) in enumerate(self.markers):
                 # Convert rod indices to display positions (reversed)
-                display_start_rod = self.num_rods - 1 - end_rod
-                display_end_rod = self.num_rods - 1 - start_rod
+                # The soroban state uses 0-based indexing where index 0 = rod 1 (rightmost)
+                # The display reverses this so index 0 appears on the right
+                # So rod index 0 should map to display position (num_rods - 1)
+                display_start_rod = self.num_rods - 1 - start_rod
+                display_end_rod = self.num_rods - 1 - end_rod
                 
-                start_x = (display_start_rod + 0.5) * rod_width
-                end_x = (display_end_rod + 1.5) * rod_width
+                # Calculate x positions to align with actual rod positions
+                # Rod positions are at (display_index + 1) * rod_width
+                # We need to find the display_index from the display_rod_index
+                start_display_index = self.num_rods - 1 - display_start_rod
+                end_display_index = self.num_rods - 1 - display_end_rod
+                
+                start_x = (start_display_index + 1) * rod_width
+                end_x = (end_display_index + 1) * rod_width
                 line_y = base_y + i * marker_row_height
                 
                 # Use different color for each marker type
                 color = marker_colors[i % len(marker_colors)]
-                painter.setPen(QPen(color, 2, Qt.SolidLine))
+                painter.setPen(QPen(color, 2))
 
                 # Draw the line
                 painter.drawLine(int(start_x), int(line_y), int(end_x), int(line_y))
