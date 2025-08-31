@@ -13,7 +13,10 @@ class TestModernMultiplication(unittest.TestCase):
         # This is a placeholder for the detailed steps.
         # For now, we'll just check the final value.
         
-        steps = soroban.multiply(57, 6)
+        # First set the multiplicand (57) on the soroban
+        soroban.set_number(57)
+        # Then multiply by the multiplier (6)
+        steps = soroban.multiply(6)
         self.assertEqual(soroban.get_value(), 342)
 
 if __name__ == '__main__':
