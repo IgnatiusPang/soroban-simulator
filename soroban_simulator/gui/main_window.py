@@ -91,20 +91,27 @@ class MainWindow(QMainWindow):
                     multiplier_len = len(str(multiplier))
                     multiplicand_len = len(str(multiplicand))
 
-                    # Position the multiplier on the far left (rod C, index 2).
-                    multiplier_rod_start = 2
-
-                    # Leave a gap of 2 rods after the multiplier.
-                    multiplicand_rod_start = multiplier_rod_start + multiplier_len + 2
+                    # Dynamic positioning based on number lengths:
+                    # Multiplier goes to rods starting from position 3 (rightmost digit)
+                    multiplier_rightmost_rod = 3 + multiplier_len - 1
+                    multiplier_rod_start = 13 - multiplier_rightmost_rod  # Rod index for rightmost digit
+                    multiplier_rod_end = 13 - 3    # Rod index for leftmost digit
                     
-                    # The product is formed to the right of the multiplicand.
-                    product_rod_start = multiplicand_rod_start + multiplicand_len 
+                    # Multiplicand goes to rods starting from position 6 (rightmost digit)
+                    multiplicand_rightmost_rod = 6 + multiplicand_len - 1
+                    multiplicand_rod_start = 13 - multiplicand_rightmost_rod  # Rod index for rightmost digit
+                    multiplicand_rod_end = 13 - 6    # Rod index for leftmost digit
+                    
+                    # Product appears on rightmost rods (11-13 for 3-digit result)
                     product_len = multiplicand_len + multiplier_len
+                    product_rightmost_rod = 13
+                    product_rod_start = 13 - product_rightmost_rod  # Rod index 0 (rod 13)
+                    product_rod_end = 13 - (product_rightmost_rod - product_len + 1)  # Rod index for leftmost digit
 
                     markers = [
-                        (multiplier_rod_start, multiplier_rod_start + multiplier_len - 1, "M1"),
-                        (multiplicand_rod_start, multiplicand_rod_start + multiplicand_len - 1, "M2"),
-                        (product_rod_start, product_rod_start + product_len - 1, "PP")
+                        (multiplier_rod_start, multiplier_rod_end, "M1"),
+                        (multiplicand_rod_start, multiplicand_rod_end, "M2"),
+                        (product_rod_start, product_rod_end, "PP")
                     ]
                     self.soroban_widget.set_markers(markers)
 

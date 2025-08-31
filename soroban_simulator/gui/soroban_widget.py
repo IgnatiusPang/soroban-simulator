@@ -90,10 +90,11 @@ class SorobanWidget(QWidget):
         painter.fillRect(self.rect(), Qt.white)
 
         rod_width = self.width() / (self.num_rods + 1)
-        # Reserve more space at bottom for marker rows
-        marker_space = self.height() * 0.15  # 15% for markers
-        rod_height = self.height() * 0.7     # Reduced from 0.8 to 0.7
-        top_margin = self.height() * 0.1
+        # Reserve more space at bottom for marker rows and top for rod numbers
+        marker_space = self.height() * 0.25  # 25% for markers (increased from 15%)
+        rod_number_space = self.height() * 0.08  # 8% for rod numbers at top
+        rod_height = self.height() * 0.52     # Reduced to accommodate larger marker space
+        top_margin = self.height() * 0.1 + rod_number_space
         bar_height = 4
         bar_y = top_margin + rod_height * 0.3
         bead_radius = rod_width / 4
@@ -101,10 +102,27 @@ class SorobanWidget(QWidget):
         painter.setPen(QPen(Qt.black, bar_height))
         painter.drawLine(0, bar_y, self.width(), bar_y)
 
+        # Draw rod numbers at the top
+        font = painter.font()
+        font.setPointSize(12)
+        font.setBold(True)
+        painter.setFont(font)
+        painter.setPen(QPen(Qt.black, 1))
+
         for i in range(self.num_rods):
             # Reverse the rod order for display: rightmost rod (highest index) should be leftmost on screen
             display_rod_index = self.num_rods - 1 - i
             rod_x = (i + 1) * rod_width
+            
+            # Draw rod number at the top (rod 1 is rightmost, rod 13 is leftmost)
+            rod_number = display_rod_index + 1
+            font_metrics = painter.fontMetrics()
+            text_width = font_metrics.horizontalAdvance(str(rod_number))
+            text_x = rod_x - text_width / 2
+            text_y = self.height() * 0.05
+            painter.drawText(int(text_x), int(text_y), str(rod_number))
+            
+            # Draw the rod
             painter.setPen(QPen(Qt.black, 2))
             painter.drawLine(rod_x, top_margin, rod_x, top_margin + rod_height)
 
@@ -144,21 +162,29 @@ class SorobanWidget(QWidget):
             base_y = top_margin + rod_height + 10
             
             for i, (start_rod, end_rod, label) in enumerate(self.markers):
-                # Convert rod indices to display positions (reversed)
-                # The soroban state uses 0-based indexing where index 0 = rod 1 (rightmost)
-                # The display reverses this so index 0 appears on the right
-                # So rod index 0 should map to display position (num_rods - 1)
-                display_start_rod = self.num_rods - 1 - start_rod
-                display_end_rod = self.num_rods - 1 - end_rod
+                # The markers use 0-based rod indices where:
+                # - Rod index 0 = Rod number 1 (rightmost rod)
+                # - Rod index 12 = Rod number 13 (leftmost rod)
+                # 
+                # The display uses reversed indexing:
+                # - display_rod_index = self.num_rods - 1 - loop_i
+                # - rod_x = (loop_i + 1) * rod_width
+                # 
+                # To find the correct x position for a rod index N:
+                # We need loop_i such that display_rod_index = N
+                # N = self.num_rods - 1 - loop_i
+                # loop_i = self.num_rods - 1 - N
                 
-                # Calculate x positions to align with actual rod positions
-                # Rod positions are at (display_index + 1) * rod_width
-                # We need to find the display_index from the display_rod_index
-                start_display_index = self.num_rods - 1 - display_start_rod
-                end_display_index = self.num_rods - 1 - display_end_rod
+                start_loop_i = self.num_rods - 1 - start_rod
+                end_loop_i = self.num_rods - 1 - end_rod
                 
-                start_x = (start_display_index + 1) * rod_width
-                end_x = (end_display_index + 1) * rod_width
+                start_x = (start_loop_i + 1) * rod_width
+                end_x = (end_loop_i + 1) * rod_width
+                
+                # Ensure start_x is always to the left of end_x for proper line drawing
+                if start_x > end_x:
+                    start_x, end_x = end_x, start_x
+                
                 line_y = base_y + i * marker_row_height
                 
                 # Use different color for each marker type
