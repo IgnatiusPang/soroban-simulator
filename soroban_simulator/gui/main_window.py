@@ -108,7 +108,8 @@ class MainWindow(QMainWindow):
                     ]
                     self.soroban_widget.set_markers(markers)
 
-            self.steps, self.result = self.calculator.calculate(equation)
+            self.steps = self.calculator.calculate(equation)
+            self.result = self.steps[-1].current_value if self.steps else 0
             self.current_step = 0
             
             self.steps_list_widget.clear()

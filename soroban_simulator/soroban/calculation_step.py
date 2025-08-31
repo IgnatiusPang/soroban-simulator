@@ -1,6 +1,6 @@
 
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 @dataclass
 class CalculationStep:
@@ -8,3 +8,4 @@ class CalculationStep:
     step_description: str
     soroban_state: List[int]
     current_value: int
+    markers: Optional[List] = None

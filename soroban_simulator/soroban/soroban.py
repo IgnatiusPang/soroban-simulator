@@ -180,10 +180,16 @@ class Soroban:
             value = value * 10 + rod
         return value
 
+    def _get_partial_products_value(self) -> int:
+        """Gets the value from the partial products area (right side of soroban)."""
+        # For multiplication, the partial products are typically in the right portion
+        # This method is similar to _get_interim_value but focuses on the result area
+        return self._get_interim_value()
+
     def _add_to_rods(self, start_rod_index: int, number: int) -> list[CalculationStep]:
         """Helper to add a number to a set of rods, handling carries."""
         steps = []
-        number_str = f"{number:02d}" # Assuming two-digit partial products
+        number_str = str(number)  # Use natural string representation
         
         for i, digit_char in enumerate(reversed(number_str)):
             rod_index = start_rod_index + len(number_str) - 1 - i
@@ -209,16 +215,25 @@ class Soroban:
         multiplicand_rod_start = 5
 
         # Set multiplier
-        steps.append(CalculationStep(f"Set multiplier {multiplier}", self.get_state(), self.get_value()))
+        multiplier_markers = [(multiplier_rod_start, multiplier_rod_start + len(multiplier_str) - 1, "M1", "blue")]
+        steps.append(CalculationStep(f"Set multiplier {multiplier}", self.get_state(), self.get_value(), multiplier_markers))
         for i, digit_char in enumerate(multiplier_str):
             steps.extend(self._set_rod_value(multiplier_rod_start + i, int(digit_char)))
 
         # Set multiplicand
-        steps.append(CalculationStep(f"Set multiplicand {multiplicand}", self.get_state(), self.get_value()))
+        multiplicand_markers = [(multiplicand_rod_start, multiplicand_rod_start + len(multiplicand_str) - 1, "M2", "green")]
+        steps.append(CalculationStep(f"Set multiplicand {multiplicand}", self.get_state(), self.get_value(), multiplicand_markers))
         for i, digit_char in enumerate(multiplicand_str):
             steps.extend(self._set_rod_value(multiplicand_rod_start + i, int(digit_char)))
 
-        # Multiplication
+        # Multiplication - place partial products in the rightmost area for final result
+        # Calculate expected result length to position it correctly
+        expected_result = multiplicand * multiplier
+        result_length = len(str(expected_result))
+        
+        # Place result starting from the rightmost rods
+        result_start_rod = self.num_rods - result_length
+        
         for i, mc_digit_char in enumerate(reversed(multiplicand_str)):
             mc_digit = int(mc_digit_char)
             mc_rod_index = multiplicand_rod_start + len(multiplicand_str) - 1 - i
@@ -228,12 +243,14 @@ class Soroban:
                 
                 partial_product = mc_digit * mp_digit
                 
-                pp_str = f"{partial_product:02d}"
-                pp_rod_start = mc_rod_index + j + 1
+                # Place partial product with correct place value in the result area
+                # Position based on the digit positions to ensure correct place value
+                pp_rod_start = result_start_rod + (len(multiplicand_str) - 1 - i) + j
 
-                steps.append(CalculationStep(f"Multiply {mc_digit} x {mp_digit} = {pp_str}", self.get_state(), self.get_value()))
+                steps.append(CalculationStep(f"Multiply {mc_digit} x {mp_digit} = {partial_product}", self.get_state(), self.get_value()))
                 
-                steps.extend(self._add_to_rods(pp_rod_start, partial_product))
+                if partial_product > 0:  # Only add non-zero partial products
+                    steps.extend(self._add_to_rods(pp_rod_start, partial_product))
 
             # Clear multiplicand digit
             steps.append(CalculationStep(f"Clear multiplicand digit {mc_digit}", self.get_state(), self.get_value()))
@@ -244,15 +261,9 @@ class Soroban:
         for i in range(len(multiplier_str)):
             steps.extend(self._set_rod_value(multiplier_rod_start + i, 0))
 
-        # Get final product
-        final_product = self._get_interim_value()
-
-        # Set the final answer
-        steps.append(CalculationStep(f"Set final answer {final_product}", self.get_state(), self.get_value()))
-        steps.extend(self.set_number(final_product))
-
-        # Final result
-        steps.append(CalculationStep("Final result", self.get_state(), self.get_value()))
+        # Final result - the product is already on the soroban in the correct position
+        final_product = self.get_value()
+        steps.append(CalculationStep(f"Final result: {final_product}", self.get_state(), final_product))
         return steps
 
     def subtract(self, number: int) -> list[CalculationStep]:
