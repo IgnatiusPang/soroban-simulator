@@ -82,7 +82,7 @@ class Soroban:
         if not descriptions:
             return steps
 
-        full_description = f"Move {' and '.join(descriptions)} on rod {self.num_rods - rod_index}"
+        full_description = f"Move {' and '.join(descriptions)} on rod {rod_index + 1}"
         
         self.rods[rod_index] = digit
         steps.append(
@@ -352,6 +352,108 @@ class Soroban:
         steps.append(CalculationStep(f"Clear multiplier {multiplier}", self.get_state(), self.get_value()))
         for i in range(len(multiplier_str)):
             steps.extend(self._set_rod_value(multiplier_rod_start + i, 0))
+
+        # Final result with PP markers
+        final_product = self.get_value()
+        result_positions = []
+        for i, value in enumerate(self.get_state()):
+            if value != 0:
+                result_positions.append(i)
+        
+        if result_positions:
+            pp_markers = [(min(result_positions), max(result_positions), "PP", "red")]
+            steps.append(CalculationStep(f"Final result: {final_product}", self.get_state(), final_product, pp_markers))
+        else:
+            steps.append(CalculationStep(f"Final result: {final_product}", self.get_state(), final_product))
+        
+        return steps
+
+    def multiply_with_setup(self, multiplicand: int, multiplier: int) -> list[CalculationStep]:
+        """Multiplies two numbers using the Modern Standard Method without detailed initial setup steps.
+        
+        This method is specifically designed for use in calculations where we want to skip
+        the granular bead movement steps for setting the initial multiplicand.
+        """
+        steps = []
+        
+        # Clear the soroban for the multiplication setup (but don't include detailed clearing steps)
+        self.rods = [0] * self.num_rods
+
+        multiplier_str = str(multiplier)
+        multiplicand_str = str(multiplicand)
+
+        # M1 (multiplier) positioning according to requirements:
+        # - For single digit: rod 11 (index 10)
+        # - For multi-digit: starting from rod 10 (index 9)
+        if len(multiplier_str) == 1:
+            multiplier_rod_start = 10  # Rod 11 (index 10)
+        else:
+            multiplier_rod_start = 11 - len(multiplier_str)  # End at rod 11, work backwards
+        
+        # M2 (multiplicand) positioning according to requirements:
+        # - For single digit: rod 8 (index 7)  
+        # - For multi-digit: starting from rod 7 (index 6)
+        if len(multiplicand_str) == 1:
+            multiplicand_rod_start = 7  # Rod 8 (index 7)
+        else:
+            multiplicand_rod_start = 8 - len(multiplicand_str)  # End at rod 8, work backwards
+
+        # Set multiplier (M1) with markers - just the summary step
+        multiplier_end_rod = multiplier_rod_start + len(multiplier_str) - 1
+        multiplier_markers = [(multiplier_rod_start, multiplier_end_rod, "M1", "blue")]
+        steps.append(CalculationStep(f"Set multiplier {multiplier}", self.get_state(), self.get_value(), multiplier_markers))
+        
+        # Place multiplier digits from right to left (least significant first)
+        for i, digit_char in enumerate(reversed(multiplier_str)):
+            rod_index = multiplier_rod_start + i
+            self.rods[rod_index] = int(digit_char)
+
+        # Set multiplicand (M2) with markers - just the summary step
+        multiplicand_end_rod = multiplicand_rod_start + len(multiplicand_str) - 1
+        multiplicand_markers = [(multiplicand_rod_start, multiplicand_end_rod, "M2", "green")]
+        steps.append(CalculationStep(f"Set multiplicand {multiplicand}", self.get_state(), self.get_value(), multiplicand_markers))
+        
+        # Place multiplicand digits from right to left (least significant first)
+        for i, digit_char in enumerate(reversed(multiplicand_str)):
+            rod_index = multiplicand_rod_start + i
+            self.rods[rod_index] = int(digit_char)
+
+        # Perform multiplication - place partial products in result area (rods 1-N)
+        # The result should appear starting from rod 1 (index 0) - rightmost position
+        
+        # Process multiplicand digits from right to left (least significant first for traditional method)
+        for i in range(len(multiplicand_str) - 1, -1, -1):
+            mc_digit = int(multiplicand_str[i])
+            mc_rod_index = multiplicand_rod_start + i
+            multiplicand_place_value = len(multiplicand_str) - 1 - i  # 0 for ones, 1 for tens, etc.
+
+            # Process multiplier digits from right to left
+            for j in range(len(multiplier_str) - 1, -1, -1):
+                mp_digit = int(multiplier_str[j])
+                multiplier_place_value = len(multiplier_str) - 1 - j  # 0 for ones, 1 for tens, etc.
+                
+                partial_product = mc_digit * mp_digit
+                
+                # Calculate the position for this partial product in the result area
+                # The combined place value determines where the rightmost digit goes
+                combined_place_value = multiplicand_place_value + multiplier_place_value
+                
+                # Place the partial product so its rightmost digit aligns with the combined place value
+                # Rod 1 (index 0) = 1's place, Rod 2 (index 1) = 10's place, etc.
+                pp_rod_start = combined_place_value
+
+                if partial_product > 0:
+                    steps.append(CalculationStep(f"Multiply {mc_digit} × {mp_digit} = {partial_product}", self.get_state(), self.get_value()))
+                    steps.extend(self._add_to_rods_left_aligned(pp_rod_start, partial_product))
+
+            # Clear the multiplicand digit after processing
+            steps.append(CalculationStep(f"Clear multiplicand digit {mc_digit}", self.get_state(), self.get_value()))
+            self.rods[mc_rod_index] = 0
+
+        # Clear multiplier digits
+        steps.append(CalculationStep(f"Clear multiplier {multiplier}", self.get_state(), self.get_value()))
+        for i in range(len(multiplier_str)):
+            self.rods[multiplier_rod_start + i] = 0
 
         # Final result with PP markers
         final_product = self.get_value()

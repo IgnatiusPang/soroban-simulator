@@ -40,19 +40,28 @@ class Calculator:
                 num1 = result_stack.pop()
                 logging.info(f"Popped {num1} and {num2} from result stack.")
 
-                if is_first_number:
-                    steps.extend(self.soroban.set_number(num1))
-                    is_first_number = False
-                
-                # Check if the value on soroban is already num1
-                elif self.soroban.get_value() != num1:
-                    logging.warning(f"Soroban value {self.soroban.get_value()} does not match expected value {num1}. This might indicate an issue.")
-                    # Decide on a recovery strategy: maybe set the number anyway?
-                    # For now, we will log a warning and proceed. A more robust solution might be needed.
-                    steps.extend(self.soroban.set_number(num1))
+                # For multiplication, we don't want the detailed initial number setting steps
+                # The multiply method will handle the setup internally
+                if token == '*':
+                    # Clear the soroban and let multiply() handle the setup
+                    if is_first_number:
+                        steps.extend(self.soroban.clear())
+                        is_first_number = False
+                    steps.extend(self.soroban.multiply_with_setup(num1, num2))
+                else:
+                    # For other operations (addition, subtraction), use the normal flow
+                    if is_first_number:
+                        steps.extend(self.soroban.set_number(num1))
+                        is_first_number = False
+                    
+                    # Check if the value on soroban is already num1
+                    elif self.soroban.get_value() != num1:
+                        logging.warning(f"Soroban value {self.soroban.get_value()} does not match expected value {num1}. This might indicate an issue.")
+                        # Decide on a recovery strategy: maybe set the number anyway?
+                        # For now, we will log a warning and proceed. A more robust solution might be needed.
+                        steps.extend(self.soroban.set_number(num1))
 
-
-                steps.extend(operations[token](num2))
+                    steps.extend(operations[token](num2))
                 
                 new_result = self.soroban.get_value()
                 result_stack.append(new_result)
