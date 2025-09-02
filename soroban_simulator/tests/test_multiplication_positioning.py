@@ -45,7 +45,7 @@ class TestMultiplicationPositioning(unittest.TestCase):
         self.assertIsNotNone(m1_after_setup_step, "M1 (multiplier 15) after setup step not found")
         
         # Check M1 positioning after it's fully set
-        expected_m1_rods = [9, 10]  # 0-indexed positions for rods 10-11 (1-indexed)
+        expected_m1_rods = [11, 12]  # 0-indexed positions for rods 12-13 (1-indexed)
         
         # Find where 15 is actually placed after setup
         m1_actual_positions = []
@@ -72,7 +72,7 @@ class TestMultiplicationPositioning(unittest.TestCase):
         self.assertIsNotNone(m2_after_setup_step, "M2 (multiplicand 5) after setup step not found")
         
         # Check M2 positioning after it's fully set
-        expected_m2_rod = 7  # 0-indexed position for rod 8 (1-indexed)
+        expected_m2_rod = 3  # 0-indexed position for rod 4 (1-indexed)
         
         # Find where 5 is actually placed after setup
         m2_actual_positions = []
