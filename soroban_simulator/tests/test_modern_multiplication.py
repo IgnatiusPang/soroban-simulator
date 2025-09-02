@@ -1,5 +1,9 @@
 import unittest
-from soroban_simulator.soroban.soroban import Soroban
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+from soroban.soroban import Soroban
 
 class TestModernMultiplication(unittest.TestCase):
     def test_multiply_57_by_6(self):

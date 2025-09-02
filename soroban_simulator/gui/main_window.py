@@ -13,12 +13,18 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Soroban Simulator")
+        
+        # Set minimum window size to ensure all markers (including PP) are visible
+        # Height needs to accommodate: rod numbers (8%), soroban rods (52%), markers (25%), controls
+        self.setMinimumSize(800, 600)
+        self.resize(1000, 700)  # Set a comfortable default size
 
         self.calculator = Calculator()
         self.steps: list[CalculationStep] = []
         self.display_steps: list[CalculationStep] = []
         self.step_map: list[int] = []
         self.current_step = 0
+        self.active_markers = []  # Track active markers throughout the calculation
 
         # Create widgets
         self.equation_input = QLineEdit()
@@ -31,7 +37,7 @@ class MainWindow(QMainWindow):
         self.next_button = QPushButton("Next")
         self.steps_list_widget = QListWidget()
         self.completion_label = QLabel("Calculation Complete")
-        self.completion_label.setAlignment(Qt.AlignCenter)
+        self.completion_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Layout
         central_widget = QWidget()
@@ -79,42 +85,6 @@ class MainWindow(QMainWindow):
         self.soroban_widget.set_markers([]) # Clear existing markers
 
         try:
-            # Set markers for multiplication, following the Modern Standard Method.
-            if "*" in equation:
-                parts = self.calculator.parser.generate_rpn(equation)
-                operands = [p for p in parts if isinstance(p, int)]
-                if len(operands) == 2:
-                    # In RPN, the operands are pushed onto the stack first,
-                    # so the first operand is the multiplicand and the second is the multiplier.
-                    multiplicand, multiplier = operands[0], operands[1]
-                    
-                    multiplier_len = len(str(multiplier))
-                    multiplicand_len = len(str(multiplicand))
-
-                    # Dynamic positioning based on number lengths:
-                    # Multiplier goes to rods starting from position 3 (rightmost digit)
-                    multiplier_rightmost_rod = 3 + multiplier_len - 1
-                    multiplier_rod_start = 13 - multiplier_rightmost_rod  # Rod index for rightmost digit
-                    multiplier_rod_end = 13 - 3    # Rod index for leftmost digit
-                    
-                    # Multiplicand goes to rods starting from position 6 (rightmost digit)
-                    multiplicand_rightmost_rod = 6 + multiplicand_len - 1
-                    multiplicand_rod_start = 13 - multiplicand_rightmost_rod  # Rod index for rightmost digit
-                    multiplicand_rod_end = 13 - 6    # Rod index for leftmost digit
-                    
-                    # Product appears on rightmost rods (11-13 for 3-digit result)
-                    product_len = multiplicand_len + multiplier_len
-                    product_rightmost_rod = 13
-                    product_rod_start = 13 - product_rightmost_rod  # Rod index 0 (rod 13)
-                    product_rod_end = 13 - (product_rightmost_rod - product_len + 1)  # Rod index for leftmost digit
-
-                    markers = [
-                        (multiplier_rod_start, multiplier_rod_end, "M1"),
-                        (multiplicand_rod_start, multiplicand_rod_end, "M2"),
-                        (product_rod_start, product_rod_end, "PP")
-                    ]
-                    self.soroban_widget.set_markers(markers)
-
             self.steps = self.calculator.calculate(equation)
             self.result = self.steps[-1].current_value if self.steps else 0
             self.current_step = 0
@@ -171,6 +141,25 @@ class MainWindow(QMainWindow):
             self.soroban_widget.set_state(step.soroban_state)
             self.on_animation_finished() # Manually call to update UI state
 
+        # Update active markers based on the current step
+        if hasattr(step, 'markers') and step.markers:
+            # Update active markers with new markers from this step
+            for marker in step.markers:
+                # Remove any existing marker with the same label
+                # Check both 3-element and 4-element marker formats
+                self.active_markers = [m for m in self.active_markers if len(m) < 3 or (len(m) >= 3 and m[2] != marker[2])]
+                # Add the new marker
+                self.active_markers.append(marker)
+        
+        # Only clear M1/M2 markers when we reach the final result step
+        # This keeps them visible throughout the multiplication process
+        if "Final result" in step.step_description:
+            # Keep all markers for the final result, but M1/M2 will be naturally replaced by PP
+            pass
+        
+        # Set the accumulated markers
+        self.soroban_widget.set_markers(self.active_markers)
+
         self.step_description_label.setText(f"Step description: {step.step_description}")
         self.current_value_label.setText(f"Current value: {step.current_value}")
         
@@ -205,6 +194,7 @@ class MainWindow(QMainWindow):
         self.display_steps = []
         self.step_map = []
         self.current_step = 0
+        self.active_markers = []  # Clear active markers
         self.calculator.soroban.clear()
         self.soroban_widget.set_markers([])
         self.soroban_widget.set_state(self.calculator.soroban.get_state())

@@ -92,9 +92,9 @@ class SorobanWidget(QWidget):
         rod_width = self.width() / (self.num_rods + 1)
         # Reserve more space at bottom for marker rows and top for rod numbers
         marker_space = self.height() * 0.25  # 25% for markers (increased from 15%)
-        rod_number_space = self.height() * 0.08  # 8% for rod numbers at top
-        rod_height = self.height() * 0.52     # Reduced to accommodate larger marker space
-        top_margin = self.height() * 0.1 + rod_number_space
+        rod_number_space = self.height() * 0.12  # 12% for rod numbers at top (increased from 8%)
+        rod_height = self.height() * 0.48     # Reduced to accommodate larger top space
+        top_margin = self.height() * 0.15 + rod_number_space  # Increased top margin from 10% to 15%
         bar_height = 4
         bar_y = top_margin + rod_height * 0.3
         bead_radius = rod_width / 4
@@ -161,7 +161,15 @@ class SorobanWidget(QWidget):
             marker_row_height = 25
             base_y = top_margin + rod_height + 10
             
-            for i, (start_rod, end_rod, label) in enumerate(self.markers):
+            for i, marker in enumerate(self.markers):
+                # Handle both 3-value and 4-value marker formats
+                if len(marker) == 3:
+                    start_rod, end_rod, label = marker
+                    color_name = None
+                elif len(marker) == 4:
+                    start_rod, end_rod, label, color_name = marker
+                else:
+                    continue  # Skip invalid markers
                 # The markers use 0-based rod indices where:
                 # - Rod index 0 = Rod number 1 (rightmost rod)
                 # - Rod index 12 = Rod number 13 (leftmost rod)
@@ -187,8 +195,20 @@ class SorobanWidget(QWidget):
                 
                 line_y = base_y + i * marker_row_height
                 
-                # Use different color for each marker type
-                color = marker_colors[i % len(marker_colors)]
+                # Use color from marker if available, otherwise use default colors
+                if color_name:
+                    # Map color names to QColor objects
+                    color_map = {
+                        'blue': QColor(0, 114, 178),
+                        'green': QColor(0, 158, 115), 
+                        'red': QColor(213, 94, 0),
+                        'orange': QColor(230, 159, 0)
+                    }
+                    color = color_map.get(color_name.lower(), marker_colors[i % len(marker_colors)])
+                else:
+                    # Use different color for each marker type (fallback)
+                    color = marker_colors[i % len(marker_colors)]
+                
                 painter.setPen(QPen(color, 2))
 
                 # Draw the line
