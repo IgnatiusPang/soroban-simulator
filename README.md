@@ -9,6 +9,7 @@ A desktop application that simulates a Japanese soroban (abacus). It can perform
 *   **Addition**: Full support with carry operations and granular bead movement steps.
 *   **Subtraction**: Full support with borrow operations and granular bead movement steps.
 *   **Multiplication**: Modern Standard Method implementation with proper rod positioning and partial product calculations.
+*   **Division**: Modern Division Method (shojohou) implementation with estimation-multiply-subtract-revise cycle.
 *   Supports expressions with parentheses.
 *   Shows textual description of each step with correct rod numbering.
 *   Rod positioning follows traditional soroban convention: Rod 1 (rightmost) = ones place, Rod 2 = tens place, etc.
@@ -18,7 +19,7 @@ A desktop application that simulates a Japanese soroban (abacus). It can perform
 - ✅ **Addition** (`+`): Complete implementation with detailed steps
 - ✅ **Subtraction** (`-`): Complete implementation with detailed steps  
 - ✅ **Multiplication** (`*`): Modern Standard Method with optimized step descriptions
-- ❌ **Division** (`/`): Not yet implemented
+- ✅ **Division** (`/`): Modern Division Method (shojohou) with estimation-multiply-subtract-revise cycle
 
 ## Calculation Examples
 
@@ -34,6 +35,13 @@ Uses the Modern Standard Method with:
 - Multiplicand positioning on rods 7-8  
 - Result calculation in rods 1-5
 - Optimized steps that skip unnecessary initial number setting details
+
+### Division: `951 / 3`
+Uses the Modern Division Method (shojohou) with:
+- Divisor positioning on leftmost rods
+- Dividend positioning on rightmost rods
+- Quotient calculation using estimation-multiply-subtract-revise cycle
+- Kojima's placement rules for optimal quotient positioning
 
 ## Prerequisites
 

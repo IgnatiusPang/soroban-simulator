@@ -25,6 +25,7 @@ class Calculator:
             '+': self.soroban.add,
             '-': self.soroban.subtract,
             '*': self.soroban.multiply,
+            '/': self.soroban.divide,
         }
 
         for token in rpn_queue:
@@ -40,14 +41,20 @@ class Calculator:
                 num1 = result_stack.pop()
                 logging.info(f"Popped {num1} and {num2} from result stack.")
 
-                # For multiplication, we don't want the detailed initial number setting steps
-                # The multiply method will handle the setup internally
+                # For multiplication and division, we don't want the detailed initial number setting steps
+                # The multiply/divide methods will handle the setup internally
                 if token == '*':
                     # Clear the soroban and let multiply() handle the setup
                     if is_first_number:
                         steps.extend(self.soroban.clear())
                         is_first_number = False
                     steps.extend(self.soroban.multiply_with_setup(num1, num2))
+                elif token == '/':
+                    # Clear the soroban and let divide() handle the setup
+                    if is_first_number:
+                        steps.extend(self.soroban.clear())
+                        is_first_number = False
+                    steps.extend(self.soroban.divide(num1, num2))
                 else:
                     # For other operations (addition, subtraction), use the normal flow
                     if is_first_number:
