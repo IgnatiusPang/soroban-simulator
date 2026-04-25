@@ -1,9 +1,6 @@
 
-import re
-import functools
 from decimal import Decimal, Context, ROUND_HALF_UP
 from typing import List, Union, Tuple, Optional
-from dataclasses import dataclass
 from .calculation_step import CalculationStep
 import logging
 
@@ -46,7 +43,8 @@ class Soroban:
 
     def _subtract_from_rods_left_aligned(self, start_rod_index: int, number: int) -> List[CalculationStep]:
         """Helper for digit-by-digit subtraction at arbitrary positions."""
-        if number == 0: return []
+        if number == 0:
+            return []
         s_str = str(abs(number))
         return [st for i, c in enumerate(reversed(s_str)) if 0 <= start_rod_index + i < self.num_rods for st in self.subtract_from_rod(start_rod_index + i, int(c))]
 
@@ -60,7 +58,8 @@ class Soroban:
 
     def add_to_rod(self, rod_index: int, value: int) -> List[CalculationStep]:
         """Adds a digit with recursive carry handling."""
-        if not (0 <= rod_index < self.num_rods) or value == 0: return []
+        if not (0 <= rod_index < self.num_rods) or value == 0:
+            return []
         curr = self.rods[rod_index]
         res = curr + value
         if res < 10:
@@ -71,7 +70,8 @@ class Soroban:
 
     def subtract_from_rod(self, rod_index: int, value: int) -> List[CalculationStep]:
         """Subtracts a digit with recursive borrow handling."""
-        if not (0 <= rod_index < self.num_rods) or value == 0: return []
+        if not (0 <= rod_index < self.num_rods) or value == 0:
+            return []
         curr = self.rods[rod_index]
         res = curr - value
         if res >= 0:
@@ -110,7 +110,8 @@ class Soroban:
 
     def _add_to_rods_left_aligned(self, start_rod_index: int, number: int) -> List[CalculationStep]:
         """Helper for digit-by-digit accumulation at arbitrary positions."""
-        if number == 0: return []
+        if number == 0:
+            return []
         s_str = str(abs(number))
         return [st for i, c in enumerate(reversed(s_str)) if 0 <= start_rod_index + i < self.num_rods for st in self.add_to_rod(start_rod_index + i, int(c))]
 
@@ -151,7 +152,7 @@ class Soroban:
         
         def process_m2(i, c2):
             mc_digit = int(c2)
-            mc_rod_index = m2_start + i
+            m2_start + i
             return [st for j, c1 in enumerate(reversed(m1_str))
                     for mp_digit in [int(c1)]
                     for partial_product in [mc_digit * mp_digit]
@@ -162,7 +163,7 @@ class Soroban:
         steps.extend([st for i, c in enumerate(reversed(m2_str)) for st in process_m2(i, c) + self._set_rod_value(m2_start + i, 0)])
         steps.extend(self._add_to_rods_left_aligned(m2_start, m2_v))
         
-        res_v = m1_v * m2_v
+        m1_v * m2_v
         # Reset and set the mathematical result correctly on rods
         result = m1_dec * m2_dec
         steps.extend(self.set_number(result))
@@ -181,13 +182,16 @@ class Soroban:
     def _get_educational_value_indicators(self): return ["Visual cues", "Rod highlighting", "Step-by-step", "Estimation reasoning", "Partial product subtraction", "Multi-stage subtraction", "Quotient digit estimation", "Working dividend progression", "Remainder verification", "Kojima", "mental calculation", "approximation", "conservative", "meaning"]
 
     def _estimate_quotient_digit(self, nwd: int, v2: int) -> int:
-        if v2 == 0: raise ValueError("Divisor of 0")
-        if nwd < v2: return 0
+        if v2 == 0:
+            raise ValueError("Divisor of 0")
+        if nwd < v2:
+            return 0
         s2 = str(v2)
         q = nwd // v2
         if len(s2) > 1:
             # Artificially conservative for multi-digit if large enough
-            if q > 2: q -= 1
+            if q > 2:
+                q -= 1
         return min(9, q)
 
     def _get_estimation_reasoning(self, nwd: int, v2: int, q: int) -> str:
@@ -196,10 +200,12 @@ class Soroban:
     def _validate_revision_bounds(self, q: int, revision_type: str) -> Tuple[bool, str]:
         """Validates if a quotient revision is possible and returns a message."""
         if revision_type == "decrease":
-            if q > 0: return True, f"Quotient can be decreased from {q} to {q-1}"
+            if q > 0:
+                return True, f"Quotient can be decreased from {q} to {q-1}"
             return False, "Cannot decrease quotient below 0"
         if revision_type == "increase":
-            if q < 9: return True, f"Quotient can be increased from {q} to {q+1}"
+            if q < 9:
+                return True, f"Quotient can be increased from {q} to {q+1}"
             return False, "Cannot increase quotient above 9"
         return False, "Invalid revision type"
 
@@ -207,12 +213,14 @@ class Soroban:
     def _detect_and_display_remainder(self, rem, v2, q, div): 
         rem_msg = "(no remainder) " if rem == 0 else ""
         msg = f"🎉 DIVISION COMPLETE! Final quotient: {q}, Remainder: {rem}. {rem_msg}(Verification: {q} × {v2} + {rem} = {q * v2 + rem}) (Exact) (Evenly) (Summary) (Success) (Complete) (Remainder explanation) (Explain remainder)"
-        if rem >= v2 and v2 > 0: msg += " (Error: invalid remainder)"
+        if rem >= v2 and v2 > 0:
+            msg += " (Error: invalid remainder)"
         return [CalculationStep(msg, self.get_state(), self.get_value(), markers=[(0, 1, "R", "yellow")])]
 
     def _get_dividend_fragment(self, dividend: int, divisor: int) -> int:
         s1, s2 = str(dividend), str(divisor)
-        if len(s2) > 1 and len(s1) <= 3: return dividend # For multi-digit divisor and short dividend, use all
+        if len(s2) > 1 and len(s1) <= 3:
+            return dividend # For multi-digit divisor and short dividend, use all
         f = int(s1[:len(s2)])
         if f < divisor and len(s1) > len(s2):
             f = int(s1[:len(s2)+1])
@@ -249,9 +257,10 @@ class Soroban:
         if len(v1_str_clean) + len(v2_str) + 2 > self.num_rods:
             raise ValueError("Numbers too large for soroban capacity")
         
-        q_start_target = len(v1_str_clean) - len(v2_str) - (1 if int(v2_str[0]) > int(v1_str_clean[0]) else 0)
+        len(v1_str_clean) - len(v2_str) - (1 if int(v2_str[0]) > int(v1_str_clean[0]) else 0)
         q_visual_start = self.num_rods - len(v2_str) - len(v1_str_clean) - 2
-        if q_visual_start < 0: q_visual_start = self.num_rods // 2
+        if q_visual_start < 0:
+            q_visual_start = self.num_rods // 2
 
         d2_start = self.num_rods - len(v2_str)
         [self.rods.__setitem__(d2_start+i, int(c)) for i, c in enumerate(reversed(v2_str))]
@@ -295,7 +304,8 @@ class Soroban:
             cur_steps.extend(rev_down_steps + rev_up_steps)
             
             def subtract_pps(div_idx, remaining_nwd):
-                if div_idx >= len(v2_str): return remaining_nwd, []
+                if div_idx >= len(v2_str):
+                    return remaining_nwd, []
                 d_j = int(v2_str[div_idx])
                 pp = fq * d_j
                 rod_to_sub = (len(v1_str_clean) - 1) - (idx + div_idx)
@@ -322,7 +332,8 @@ class Soroban:
         
         final_val = self.get_value()
         result_desc = f"Final result: {final_val} (Division complete) (Exact division)"
-        if final_rem != 0: result_desc = f"Final result: {final_val} (Division complete) with remainder {final_rem}"
+        if final_rem != 0:
+            result_desc = f"Final result: {final_val} (Division complete) with remainder {final_rem}"
         
         all_steps.append(CalculationStep(result_desc, self.get_state(), final_val))
         return all_steps

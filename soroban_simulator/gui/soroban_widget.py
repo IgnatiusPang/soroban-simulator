@@ -90,7 +90,7 @@ class SorobanWidget(QWidget):
         painter.fillRect(self.rect(), Qt.white)
 
         rod_width = self.width() / (self.num_rods + 1)
-        marker_space = self.height() * 0.25
+        self.height() * 0.25
         rod_number_space = self.height() * 0.12
         rod_height = self.height() * 0.48
         top_margin = self.height() * 0.15 + rod_number_space
@@ -151,7 +151,8 @@ class SorobanWidget(QWidget):
 
             def draw_marker(idx_marker):
                 i, marker = idx_marker
-                if len(marker) < 3: return
+                if len(marker) < 3:
+                    return
                 
                 start_rod, end_rod, label = marker[:3]
                 colour_name = marker[3] if len(marker) > 3 else None
@@ -159,7 +160,8 @@ class SorobanWidget(QWidget):
                 # Correct rod-to-x conversion logic
                 start_x = (self.num_rods - start_rod) * rod_width
                 end_x = (self.num_rods - end_rod) * rod_width
-                if start_x > end_x: start_x, end_x = end_x, start_x
+                if start_x > end_x:
+                    start_x, end_x = end_x, start_x
                 
                 line_y = base_y + i * marker_row_height
                 colour = colour_map.get(colour_name.lower() if colour_name else "", marker_colours[i % len(marker_colours)])
