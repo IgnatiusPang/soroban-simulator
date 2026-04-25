@@ -49,12 +49,12 @@ def debug_marker_calculation():
             (product_rod_start, product_rod_start + product_len - 1, "PP")
         ]
         
-        print(f"\nMarkers:")
+        print("\nMarkers:")
         for marker in markers:
             print(f"  {marker}")
             
         # Convert to rod numbers (1-based, rightmost)
-        print(f"\nRod numbers (1=rightmost, 13=leftmost):")
+        print("\nRod numbers (1=rightmost, 13=leftmost):")
         for start_rod, end_rod, label in markers:
             start_rod_num = 13 - start_rod
             end_rod_num = 13 - end_rod

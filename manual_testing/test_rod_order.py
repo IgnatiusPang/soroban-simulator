@@ -18,7 +18,7 @@ def test_rod_order():
     print("Testing with number 123:")
     print("Expected: 3 should be in 1's place (rightmost), 2 in 10's place, 1 in 100's place (leftmost)")
     
-    steps = soroban.set_number(123)
+    soroban.set_number(123)
     state = soroban.get_state()
     
     print(f"Soroban state: {state}")
@@ -42,7 +42,7 @@ def test_rod_order():
     print("- Middle rod shows 10's place (rod 2)")  
     print("- Rightmost rod shows 1's place (rod 1)")
     
-    print(f"\nFor number 123:")
+    print("\nFor number 123:")
     print(f"- Rod 1 (index 0, rightmost): {state[0]} (1's place)")
     print(f"- Rod 2 (index 1): {state[1]} (10's place)")
     print(f"- Rod 3 (index 2): {state[2]} (100's place)")

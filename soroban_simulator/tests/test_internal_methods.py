@@ -15,7 +15,7 @@ class TestInternalMethods(unittest.TestCase):
         # Test what 20 should actually look like when set properly
         soroban2 = Soroban(13, unit_rod_index=0)
         soroban2.set_number(20)
-        expected_state = soroban2.get_state()
+        soroban2.get_state()
         expected_value = soroban2.get_value()
         
         self.assertEqual(expected_value, 20, "Properly set 20 should have value 20")

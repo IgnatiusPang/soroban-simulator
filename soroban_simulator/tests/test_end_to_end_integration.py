@@ -1,4 +1,3 @@
-from decimal import Decimal
 """
 End-to-End Integration Tests for Soroban Division
 

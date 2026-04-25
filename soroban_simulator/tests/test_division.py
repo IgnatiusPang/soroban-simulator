@@ -254,7 +254,7 @@ class TestSorobanDivision(unittest.TestCase):
         for dividend, divisor in test_cases:
             with self.subTest(dividend=dividend, divisor=divisor):
                 self.soroban.clear()
-                steps = self.soroban._setup_division_workspace(dividend, divisor)
+                self.soroban._setup_division_workspace(dividend, divisor)
                 
                 # Get final state after setup
                 state = self.soroban.get_state()
@@ -760,7 +760,7 @@ class TestSorobanDivision(unittest.TestCase):
         
         # Verify our test logic
         with self.assertRaises(ZeroDivisionError):
-            result = dividend // divisor  # This should raise ZeroDivisionError
+            dividend // divisor  # This should raise ZeroDivisionError
         
         # Test invalid input preparation
         invalid_inputs = [
@@ -812,7 +812,6 @@ class TestSorobanDivision(unittest.TestCase):
         dividend = 9
         divisor = 3
         expected_quotient = 3
-        expected_remainder = 0
         
         steps = self.soroban.divide(dividend, divisor, precision=0)
         
@@ -984,7 +983,6 @@ class TestSorobanDivision(unittest.TestCase):
         dividend = 71
         divisor = 9
         expected_quotient = 7  # 71 ÷ 9 = 7 remainder 8
-        expected_remainder = 8
         
         steps = self.soroban.divide(dividend, divisor, precision=0)
         
@@ -998,7 +996,7 @@ class TestSorobanDivision(unittest.TestCase):
         
         # Check if overestimate detection occurred (might not always happen with this example)
         overestimate_keywords = ["overestimate", "revise", "decrease", "cannot subtract"]
-        overestimate_detected = any(keyword in combined_text for keyword in overestimate_keywords)
+        any(keyword in combined_text for keyword in overestimate_keywords)
         
         # Verify final result is correct regardless of whether revision occurred
         final_value = self.soroban.get_value()
@@ -1020,7 +1018,6 @@ class TestSorobanDivision(unittest.TestCase):
         dividend = 99
         divisor = 9
         expected_quotient = 11  # 99 ÷ 9 = 11 remainder 0
-        expected_remainder = 0
         
         steps = self.soroban.divide(dividend, divisor, precision=0)
         
@@ -1034,7 +1031,7 @@ class TestSorobanDivision(unittest.TestCase):
         
         # Check if underestimate detection occurred
         underestimate_keywords = ["underestimate", "remainder", "increase", "revise"]
-        underestimate_detected = any(keyword in combined_text for keyword in underestimate_keywords)
+        any(keyword in combined_text for keyword in underestimate_keywords)
         
         # Verify final result is correct
         final_value = self.soroban.get_value()
@@ -1067,7 +1064,7 @@ class TestSorobanDivision(unittest.TestCase):
         
         # Check for revision-related keywords
         revision_keywords = ["revision", "revise", "overestimate", "underestimate", "correct"]
-        revision_found = any(keyword in combined_text for keyword in revision_keywords)
+        any(keyword in combined_text for keyword in revision_keywords)
         
         # Verify final result is mathematically correct
         final_value = self.soroban.get_value()
@@ -1253,7 +1250,7 @@ class TestSorobanDivision(unittest.TestCase):
             "mixed"
         ]
         
-        found_summary_keywords = [keyword for keyword in summary_keywords if keyword in combined_text]
+        [keyword for keyword in summary_keywords if keyword in combined_text]
         
         # Verify final result is correct
         final_value = self.soroban.get_value()
@@ -1341,15 +1338,9 @@ class TestSorobanDivision(unittest.TestCase):
                 
                 # Look for boundary condition handling
                 step_descriptions = [step.step_description for step in steps]
-                combined_text = " ".join(step_descriptions).lower()
+                " ".join(step_descriptions).lower()
                 
                 # Check for boundary condition keywords
-                boundary_keywords = [
-                    "quotient revised to 0",
-                    "maximum quotient digit",
-                    "no further reduction possible",
-                    "no further increase possible"
-                ]
                 
                 # Verify final result is correct
                 final_value = self.soroban.get_value()
@@ -1410,7 +1401,7 @@ class TestSorobanDivision(unittest.TestCase):
                 
                 # Verify mathematical correctness
                 expected_quotient = dividend // divisor
-                expected_remainder = dividend % divisor
+                dividend % divisor
                 
                 final_value = self.soroban.get_value()
                 self.assertEqual(final_value, expected_quotient,
@@ -1488,7 +1479,7 @@ class TestSorobanDivision(unittest.TestCase):
         
         # Look for any revision activity
         revision_keywords = ["revision", "overestimate", "underestimate", "detected", "revise"]
-        revision_activity = any(keyword in combined_text for keyword in revision_keywords)
+        any(keyword in combined_text for keyword in revision_keywords)
         
         # The test passes if the result is correct, regardless of whether revisions occurred
         # This tests the robustness of the revision system
@@ -1518,7 +1509,7 @@ class TestSorobanDivision(unittest.TestCase):
                 
                 # Verify mathematical correctness
                 expected_quotient = dividend // divisor
-                expected_remainder = dividend % divisor
+                dividend % divisor
                 
                 final_value = self.soroban.get_value()
                 self.assertEqual(final_value, expected_quotient,
@@ -1612,7 +1603,7 @@ class TestSorobanDivision(unittest.TestCase):
         
         # Verify the process shows multi-digit quotient building
         all_descriptions = [step.step_description for step in steps]
-        combined_text = " ".join(all_descriptions).lower()
+        " ".join(all_descriptions).lower()
         
         # Should mention both quotient digits being placed
         quotient_placements = [desc for desc in all_descriptions if "place quotient digit" in desc.lower()]
@@ -1916,13 +1907,12 @@ class TestSorobanDivision(unittest.TestCase):
         # Test with a simple case: 15 ÷ 3 = 5
         dividend = 15
         divisor = 3
-        expected_quotient = 5
         
         steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify the cycle steps are present
         all_descriptions = [step.step_description for step in steps]
-        combined_text = " ".join(all_descriptions).lower()
+        " ".join(all_descriptions).lower()
         
         # Should show estimation step
         estimation_found = any("estimate" in desc.lower() for desc in all_descriptions)
@@ -1955,14 +1945,12 @@ class TestSorobanDivision(unittest.TestCase):
         # Use a case where initial estimation might be off
         dividend = 17
         divisor = 5
-        expected_quotient = 3
-        expected_remainder = 2
         
         steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Check if revision was mentioned (it may or may not be needed depending on estimation)
         all_descriptions = [step.step_description for step in steps]
-        combined_text = " ".join(all_descriptions).lower()
+        " ".join(all_descriptions).lower()
         
         # The test should complete successfully regardless of whether revision was needed
         self.assertIsInstance(steps, list, "Division with potential revision should return steps")
@@ -2037,7 +2025,7 @@ class TestSorobanDivision(unittest.TestCase):
         
         # Verify workspace setup is included
         all_descriptions = [step.step_description for step in steps]
-        combined_text = " ".join(all_descriptions).lower()
+        " ".join(all_descriptions).lower()
         
         # Should mention workspace setup
         workspace_found = any("setup" in desc.lower() or "workspace" in desc.lower() 
@@ -2395,12 +2383,10 @@ class TestDivisionIntegration(unittest.TestCase):
         Requirements: 2.1, 4.1, 4.2
         """
         # Test comprehensive range of inputs
-        test_matrix = []
         
         # Generate test cases systematically
         dividend_fragments = [0, 1, 5, 9, 12, 25, 38, 95, 123, 386, 789]
         single_digit_divisors = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-        multi_digit_divisors = [12, 23, 34, 45, 53, 67, 89, 123]
         
         # Test all combinations with single-digit divisors
         for dividend_fragment in dividend_fragments:

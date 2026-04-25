@@ -1,4 +1,3 @@
-from decimal import Decimal
 import unittest
 import sys
 import os
@@ -28,7 +27,7 @@ class Test23Times15Positioning(unittest.TestCase):
         # Set up the multiplication: 23 × 15
         steps = self.calculator.calculate("23 * 15")
         
-        print(f"\nDETAILED STEP ANALYSIS FOR 23 × 15 = 345:")
+        print("\nDETAILED STEP ANALYSIS FOR 23 × 15 = 345:")
         print(f"Total steps: {len(steps)}")
         
         # Print all steps for debugging
@@ -69,7 +68,7 @@ class Test23Times15Positioning(unittest.TestCase):
         self.assertIsNotNone(m2_after_setup_step, "M2 (multiplicand 23) after setup step not found")
         
         # Analyze M1 positioning
-        print(f"\nM1 (15) POSITIONING ANALYSIS:")
+        print("\nM1 (15) POSITIONING ANALYSIS:")
         print(f"M1 after setup state: {m1_after_setup_step.soroban_state}")
         
         # Find where digits 1 and 5 are placed
@@ -100,7 +99,7 @@ class Test23Times15Positioning(unittest.TestCase):
         print(f"Current digit 1 positioning correct: {current_digit_1_correct}")
         
         # Analyze M2 positioning
-        print(f"\nM2 (23) POSITIONING ANALYSIS:")
+        print("\nM2 (23) POSITIONING ANALYSIS:")
         print(f"M2 after setup state: {m2_after_setup_step.soroban_state}")
         
         # Find where digits 2 and 3 are placed
@@ -132,7 +131,7 @@ class Test23Times15Positioning(unittest.TestCase):
         
         # Check final result
         final_step = steps[-1]
-        print(f"\nFINAL RESULT ANALYSIS:")
+        print("\nFINAL RESULT ANALYSIS:")
         print(f"Final result: {final_step.current_value} (should be 345)")
         print(f"Final state: {final_step.soroban_state}")
         
@@ -140,27 +139,27 @@ class Test23Times15Positioning(unittest.TestCase):
         self.assertEqual(final_step.current_value, 345, "Multiplication result must be correct")
         
         # Document the positioning issue
-        print(f"\nPOSITIONING ISSUE SUMMARY:")
-        print(f"The task reports that digits are reversed in M1 and M2:")
-        print(f"M1 (15): Should have digit 5 at index 11, digit 1 at index 12")
+        print("\nPOSITIONING ISSUE SUMMARY:")
+        print("The task reports that digits are reversed in M1 and M2:")
+        print("M1 (15): Should have digit 5 at index 11, digit 1 at index 12")
         print(f"M1 (15): Currently has digit 5 at {digit_5_positions}, digit 1 at {digit_1_positions}")
-        print(f"M2 (23): Should have digit 3 at index 4, digit 2 at index 5")
+        print("M2 (23): Should have digit 3 at index 4, digit 2 at index 5")
         print(f"M2 (23): Currently has digit 3 at {digit_3_positions}, digit 2 at {digit_2_positions}")
         
         # Test the positioning requirements (this will fail until fixed)
         m1_positioning_correct = current_digit_5_correct and current_digit_1_correct
         m2_positioning_correct = current_digit_2_correct and current_digit_3_correct
         
-        print(f"\nPOSITIONING TEST RESULTS:")
+        print("\nPOSITIONING TEST RESULTS:")
         print(f"M1 positioning correct: {m1_positioning_correct}")
         print(f"M2 positioning correct: {m2_positioning_correct}")
         
         # Test the positioning requirements (should now pass with our new implementation)
-        self.assertTrue(m1_positioning_correct, f"M1 positioning should be correct: digit 5 at index 11, digit 1 at index 12")
-        self.assertTrue(m2_positioning_correct, f"M2 positioning should be correct: digit 3 at index 4, digit 2 at index 5")
+        self.assertTrue(m1_positioning_correct, "M1 positioning should be correct: digit 5 at index 11, digit 1 at index 12")
+        self.assertTrue(m2_positioning_correct, "M2 positioning should be correct: digit 3 at index 4, digit 2 at index 5")
         
         if m1_positioning_correct and m2_positioning_correct:
-            print(f"✅ All positioning requirements met for 23 × 15 = 345!")
+            print("✅ All positioning requirements met for 23 × 15 = 345!")
         
         # Verify core calculation works
         self.assertTrue(final_step.current_value == 345, "Core multiplication logic works")

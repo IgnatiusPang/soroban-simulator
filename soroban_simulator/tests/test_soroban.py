@@ -1,4 +1,3 @@
-from decimal import Decimal
 import unittest
 from soroban_simulator.soroban.soroban import Soroban
 

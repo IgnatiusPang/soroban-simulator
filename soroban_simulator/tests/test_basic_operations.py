@@ -1,4 +1,3 @@
-from decimal import Decimal
 import unittest
 from soroban_simulator.soroban.soroban import Soroban
 
@@ -13,7 +12,7 @@ class TestBasicOperations(unittest.TestCase):
     def test_4_times_5_detailed(self):
         """Test 4×5 multiplication with detailed step tracking."""
         # Set the number 4
-        steps = self.soroban.set_number(4)
+        self.soroban.set_number(4)
         self.assertEqual(self.soroban.get_value(), 4)
         
         # Multiply by 5 and track each step
@@ -47,7 +46,7 @@ class TestBasicOperations(unittest.TestCase):
         - Rod 2 (index 1) contains the 10's place  
         - Rod 3 (index 2) contains the 100's place
         """
-        steps = self.soroban.set_number(123)
+        self.soroban.set_number(123)
         state = self.soroban.get_state()
         value = self.soroban.get_value()
         

@@ -1,4 +1,3 @@
-from decimal import Decimal
 
 import unittest
 import sys
@@ -103,7 +102,7 @@ class TestMultiplicationPositioning(unittest.TestCase):
         self.assertEqual(final_step.current_value, 75, "Final multiplication result should be 75")
     
         # Test the positioning requirements
-        print(f"\nPOSITIONING VERIFICATION:")
+        print("\nPOSITIONING VERIFICATION:")
     
         # M1 positioning: Should have 1 at index 11 and 5 at index 12 after setup
         m1_correct = (len(m1_actual_positions) == 2 and 
@@ -124,7 +123,7 @@ class TestMultiplicationPositioning(unittest.TestCase):
         self.assertTrue(m2_correct, f"M2 (5) should be at position [{expected_m2_rod}], but found at {m2_actual_positions}")
         self.assertTrue(pp_correct, f"PP (75) should be at positions {expected_pp_rods}, but found at {pp_actual_positions}")
         
-        print(f"\n✓ All positioning requirements met for 5 × 15 = 75!")
+        print("\n✓ All positioning requirements met for 5 × 15 = 75!")
 
     def test_rod_indexing_conversion(self):
         """Test the conversion between 1-indexed (user-facing) and 0-indexed (internal) rod positions."""
@@ -209,26 +208,24 @@ class TestMultiplicationPositioning(unittest.TestCase):
         steps = self.calculator.calculate("5 * 15")
         
         # Find the steps after M1 and M2 are set but before multiplication begins
-        m1_after_setup = None
-        m2_after_setup = None
         
         for i, step in enumerate(steps):
             if "Set multiplier 15" in step.step_description and i + 1 < len(steps):
                 # Look for the step after multiplier is fully set
                 for j in range(i + 1, len(steps)):
                     if steps[j].soroban_state != steps[i].soroban_state:
-                        m1_after_setup = steps[j]
+                        steps[j]
                         break
             elif "Set multiplicand 5" in step.step_description and i + 1 < len(steps):
                 # Look for the step after multiplicand is fully set
                 for j in range(i + 1, len(steps)):
                     if steps[j].soroban_state != steps[i].soroban_state:
-                        m2_after_setup = steps[j]
+                        steps[j]
                         break
         
         final_step = steps[-1]
         
-        print(f"\nSPECIFICATION TEST RESULTS:")
+        print("\nSPECIFICATION TEST RESULTS:")
         print(f"Final result: {final_step.current_value} (should be 75)")
         print(f"Final state: {final_step.soroban_state}")
         
@@ -243,7 +240,7 @@ class TestMultiplicationPositioning(unittest.TestCase):
             if value != 0:
                 actual_pp_positions.append(i)
         
-        print(f"\nExpected vs Actual Positioning:")
+        print("\nExpected vs Actual Positioning:")
         print(f"M1 (15): Expected rods 10-11 (indices {expected_m1_indices})")
         print(f"M2 (5):  Expected rod 8 (index {expected_m2_index})")
         print(f"PP (75): Expected rods 1-2 (indices {expected_pp_indices}), Actual: {actual_pp_positions}")
@@ -252,13 +249,13 @@ class TestMultiplicationPositioning(unittest.TestCase):
         self.assertEqual(final_step.current_value, 75, "Multiplication result must be correct")
         
         # Document the positioning specification
-        print(f"\nPOSITIONING SPECIFICATION:")
-        print(f"For multiplication 5 × 15 = 75 on a 13-rod soroban:")
-        print(f"- M1 (multiplier 15) should occupy rods 10-11 (1-indexed)")
-        print(f"- M2 (multiplicand 5) should occupy rod 8 (1-indexed)")
-        print(f"- PP (partial product/result 75) should occupy rods 1-2 (1-indexed)")
-        print(f"- Rod 1 = rightmost rod (1's place)")
-        print(f"- Rod 13 = leftmost rod (10^12 place)")
+        print("\nPOSITIONING SPECIFICATION:")
+        print("For multiplication 5 × 15 = 75 on a 13-rod soroban:")
+        print("- M1 (multiplier 15) should occupy rods 10-11 (1-indexed)")
+        print("- M2 (multiplicand 5) should occupy rod 8 (1-indexed)")
+        print("- PP (partial product/result 75) should occupy rods 1-2 (1-indexed)")
+        print("- Rod 1 = rightmost rod (1's place)")
+        print("- Rod 13 = leftmost rod (10^12 place)")
         
         # This test documents the specification - actual positioning validation
         # would be added here once the implementation is corrected
@@ -359,7 +356,7 @@ class TestMultiplicationPositioning(unittest.TestCase):
         self.assertEqual(final_step.current_value, 259, "Final multiplication result should be 259")
         
         # Document the current vs expected positioning
-        print(f"\nCURRENT POSITIONING ANALYSIS FOR 37 × 7 = 259:")
+        print("\nCURRENT POSITIONING ANALYSIS FOR 37 × 7 = 259:")
         print(f"M1 (7): Currently at positions {m1_actual_positions}, Expected at [{expected_m1_rod}]")
         print(f"M2 (37): Currently at positions {m2_actual_positions}, Expected to include [{expected_m2_rod}]")
         print(f"PP (259): Currently at positions {pp_actual_positions}, Expected at {expected_pp_rods}")
@@ -375,18 +372,18 @@ class TestMultiplicationPositioning(unittest.TestCase):
         )
         
         if not positioning_matches_requirements:
-            print(f"\nWARNING: Current positioning does not match requirements!")
-            print(f"This test documents the current behavior for future reference.")
-            print(f"Expected positioning:")
-            print(f"  M1 (7) on rod 11 (index 10)")
-            print(f"  M2 (37) on rod 7 (index 6)")  
-            print(f"  PP (259) on rods 1-3 (indices 0-2)")
+            print("\nWARNING: Current positioning does not match requirements!")
+            print("This test documents the current behavior for future reference.")
+            print("Expected positioning:")
+            print("  M1 (7) on rod 11 (index 10)")
+            print("  M2 (37) on rod 7 (index 6)")  
+            print("  PP (259) on rods 1-3 (indices 0-2)")
 
     def test_37_times_7_step_by_step_analysis(self):
         """Detailed step-by-step analysis of 37 × 7 = 259 multiplication."""
         steps = self.calculator.calculate("37 * 7")
         
-        print(f"\nDETAILED STEP ANALYSIS FOR 37 × 7 = 259:")
+        print("\nDETAILED STEP ANALYSIS FOR 37 × 7 = 259:")
         print(f"Total steps: {len(steps)}")
         
         # Print all steps for debugging
@@ -399,11 +396,11 @@ class TestMultiplicationPositioning(unittest.TestCase):
             
             # Highlight key positioning steps
             if "Set multiplier 7" in step.step_description:
-                print(f"         >>> M1 SETUP STEP <<<")
+                print("         >>> M1 SETUP STEP <<<")
             elif "Set multiplicand 37" in step.step_description:
-                print(f"         >>> M2 SETUP STEP <<<")
+                print("         >>> M2 SETUP STEP <<<")
             elif step.current_value == 259 and "Final result" in step.step_description:
-                print(f"         >>> FINAL PP STEP <<<")
+                print("         >>> FINAL PP STEP <<<")
             print()
         
         # Verify final result
@@ -424,22 +421,20 @@ class TestMultiplicationPositioning(unittest.TestCase):
         steps = self.calculator.calculate("37 * 7")
         final_step = steps[-1]
         
-        print(f"\nPOSITIONING SPECIFICATION FOR 37 × 7 = 259:")
-        print(f"Rod numbering: 1-13 from left to right")
-        print(f"Rod 1 (rightmost) = 1's place")
-        print(f"Rod 13 (leftmost) = 10^12 place")
-        print(f"")
-        print(f"Required positioning:")
-        print(f"- M1 = 7 should be on rod 11 (index 10 in 0-based)")
-        print(f"- M2 = 37 should be on rod 7 (index 6 in 0-based)")
-        print(f"- PP = 259 should be on rods 1-3 (indices 0-2 in 0-based)")
-        print(f"")
+        print("\nPOSITIONING SPECIFICATION FOR 37 × 7 = 259:")
+        print("Rod numbering: 1-13 from left to right")
+        print("Rod 1 (rightmost) = 1's place")
+        print("Rod 13 (leftmost) = 10^12 place")
+        print("")
+        print("Required positioning:")
+        print("- M1 = 7 should be on rod 11 (index 10 in 0-based)")
+        print("- M2 = 37 should be on rod 7 (index 6 in 0-based)")
+        print("- PP = 259 should be on rods 1-3 (indices 0-2 in 0-based)")
+        print("")
         print(f"Final result: {final_step.current_value} (should be 259)")
         print(f"Final state: {final_step.soroban_state}")
         
         # Convert 1-indexed requirements to 0-indexed for testing
-        expected_m1_index = 10     # Rod 11 (1-indexed) -> index 10 (0-indexed)
-        expected_m2_index = 6      # Rod 7 (1-indexed) -> index 6 (0-indexed)  
         expected_pp_indices = [0, 1, 2]  # Rods 1-3 (1-indexed) -> indices 0-2 (0-indexed)
         
         # Find actual positions in final result
@@ -454,11 +449,11 @@ class TestMultiplicationPositioning(unittest.TestCase):
         self.assertEqual(final_step.current_value, 259, "Multiplication result must be correct")
         
         # Document the positioning specification
-        print(f"\nThis test serves as the specification for the required positioning.")
-        print(f"When positioning logic is implemented correctly, the following assertions should pass:")
-        print(f"- M1 (7) positioned at rod 11 (index 10)")
-        print(f"- M2 (37) positioned starting at rod 7 (index 6)")  
-        print(f"- PP (259) positioned at rods 1-3 (indices 0-2)")
+        print("\nThis test serves as the specification for the required positioning.")
+        print("When positioning logic is implemented correctly, the following assertions should pass:")
+        print("- M1 (7) positioned at rod 11 (index 10)")
+        print("- M2 (37) positioned starting at rod 7 (index 6)")  
+        print("- PP (259) positioned at rods 1-3 (indices 0-2)")
         
         # For now, we verify that the multiplication works correctly
         self.assertTrue(final_step.current_value == 259, "Core multiplication logic works")

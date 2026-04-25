@@ -1,4 +1,3 @@
-from decimal import Decimal
 import unittest
 import sys
 import os
@@ -45,7 +44,7 @@ class Test515Times259(unittest.TestCase):
             if value != 0:
                 pp_actual_positions.append(i)
         
-        print(f"\n515 × 259 = 133385 POSITIONING TEST:")
+        print("\n515 × 259 = 133385 POSITIONING TEST:")
         print(f"Final result: {final_step.current_value}")
         print(f"Final state: {final_step.soroban_state}")
         print(f"PP (133385) positions: {pp_actual_positions}")
@@ -66,7 +65,7 @@ class Test515Times259(unittest.TestCase):
         """Detailed step-by-step analysis of 515 × 259 = 133385 multiplication."""
         steps = self.calculator.calculate("515 * 259")
         
-        print(f"\nDETAILED STEP ANALYSIS FOR 515 × 259 = 133385:")
+        print("\nDETAILED STEP ANALYSIS FOR 515 × 259 = 133385:")
         print(f"Total steps: {len(steps)}")
         
         # Find key steps
@@ -93,7 +92,7 @@ class Test515Times259(unittest.TestCase):
                     break
             
             if setup_complete_step:
-                print(f"\nAfter M1 and M2 setup:")
+                print("\nAfter M1 and M2 setup:")
                 print(f"State: {setup_complete_step.soroban_state}")
                 
                 # Find M1 positions (259)
@@ -159,7 +158,7 @@ class Test515Times259(unittest.TestCase):
         # For a 6-digit number, we expect positions in the lower indices (rightmost rods)
         max_expected_position = 5  # rod 6 (index 5) should be the leftmost position for the result
         
-        print(f"\nOverlap verification:")
+        print("\nOverlap verification:")
         print(f"Result positions: {result_positions}")
         print(f"Max expected position: {max_expected_position}")
         print(f"All positions within expected range: {all(pos <= max_expected_position for pos in result_positions)}")
