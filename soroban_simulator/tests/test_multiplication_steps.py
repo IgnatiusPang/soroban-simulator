@@ -1,3 +1,4 @@
+from decimal import Decimal
 import unittest
 from soroban_simulator.soroban.calculator import Calculator
 
@@ -104,8 +105,7 @@ class TestMultiplicationSteps(unittest.TestCase):
         
         # For addition, we should still have the initial setting steps
         expected_steps = [
-            "Setting number: 123",
-            "Finished setting 123"
+            "Set number 123"
         ]
         
         for expected_step in expected_steps:

@@ -1,3 +1,4 @@
+from decimal import Decimal
 import unittest
 from soroban_simulator.soroban.calculator import Calculator
 

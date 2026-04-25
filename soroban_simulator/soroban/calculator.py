@@ -1,3 +1,6 @@
+
+import functools
+from decimal import Decimal
 from .soroban import Soroban
 from .parser import Parser
 from .calculation_step import CalculationStep
@@ -6,72 +9,77 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 class Calculator:
-    """Orchestrates the calculation by evaluating the RPN queue."""
+    """Orchestrates the calculation by evaluating the RPN queue using functional patterns."""
 
-    def __init__(self, num_rods: int = 13):
-        """Initializes the calculator."""
-        self.soroban = Soroban(num_rods)
+    def __init__(self, num_rods: int = 13, unit_rod_index: int = 0):
+        """Initialises the calculator."""
+        self.soroban = Soroban(num_rods, unit_rod_index)
         self.parser = Parser()
 
     def calculate(self, equation_string: str) -> list[CalculationStep]:
-        """Calculates the result of an equation string."""
+        """Calculates the result of an equation string using absolute functional patterns."""
         rpn_queue = self.parser.generate_rpn(equation_string)
         logging.info(f"RPN queue: {rpn_queue}")
-        steps = []
-        result_stack = []
-        is_first_number = True
 
         operations = {
             '+': self.soroban.add,
             '-': self.soroban.subtract,
             '*': self.soroban.multiply,
+            '/': self.soroban.divide,
         }
 
-        for token in rpn_queue:
+        def process_token(state, token):
+            steps, result_stack, is_first_number = state
             logging.info(f"Processing token: {token}")
-            if isinstance(token, int):
-                result_stack.append(token)
-                logging.info(f"Pushed {token} to result stack: {result_stack}")
-            elif token in operations:
+
+            if isinstance(token, (int, Decimal)):
+                return (steps, result_stack + [token], is_first_number)
+            
+            if token in operations:
                 if len(result_stack) < 2:
                     raise ValueError("Invalid expression: not enough operands for operator.")
                 
-                num2 = result_stack.pop()
-                num1 = result_stack.pop()
-                logging.info(f"Popped {num1} and {num2} from result stack.")
-
-                # For multiplication, we don't want the detailed initial number setting steps
-                # The multiply method will handle the setup internally
-                if token == '*':
-                    # Clear the soroban and let multiply() handle the setup
-                    if is_first_number:
-                        steps.extend(self.soroban.clear())
-                        is_first_number = False
-                    steps.extend(self.soroban.multiply_with_setup(num1, num2))
-                else:
-                    # For other operations (addition, subtraction), use the normal flow
-                    if is_first_number:
-                        steps.extend(self.soroban.set_number(num1))
-                        is_first_number = False
-                    
-                    # Check if the value on soroban is already num1
-                    elif self.soroban.get_value() != num1:
-                        logging.warning(f"Soroban value {self.soroban.get_value()} does not match expected value {num1}. This might indicate an issue.")
-                        # Decide on a recovery strategy: maybe set the number anyway?
-                        # For now, we will log a warning and proceed. A more robust solution might be needed.
-                        steps.extend(self.soroban.set_number(num1))
-
-                    steps.extend(operations[token](num2))
+                num1, num2 = result_stack[-2:]
+                new_stack = result_stack[:-2]
                 
-                new_result = self.soroban.get_value()
-                result_stack.append(new_result)
-                logging.info(f"Pushed {new_result} to result stack: {result_stack}")
-            else:
-                raise ValueError(f"Unsupported token: {token}")
+                op_steps = []
+                current_is_first = is_first_number
 
-        if len(result_stack) != 1:
+                # Operation-specific description
+                op_desc_map = {'+': "addition operation", '-': "subtraction operation", '*': "multiplication operation", '/': "division operation"}
+                op_desc = op_desc_map.get(token, "operation")
+
+                if token == '*':
+                    if current_is_first:
+                        op_steps.extend(self.soroban.clear())
+                        current_is_first = False
+                    op_steps.extend(self.soroban.multiply_with_setup(num2, num1))
+                elif token == '/':
+                    if current_is_first:
+                        op_steps.extend(self.soroban.clear())
+                        current_is_first = False
+                    op_steps.extend(self.soroban.divide(num1, num2))
+                else:
+                    if current_is_first:
+                        op_steps.extend(self.soroban.set_number(num1))
+                        current_is_first = False
+                    elif self.soroban.get_value() != num1:
+                        logging.warning(f"Soroban value {self.soroban.get_value()} mismatch {num1}. Resetting.")
+                        op_steps.extend(self.soroban.set_number(num1))
+                    
+                    op_steps.extend(operations[token](num2))
+
+                new_result = self.soroban.get_value()
+                op_steps.append(CalculationStep(f"Complete {token} operation ({op_desc})", self.soroban.get_state(), new_result))
+                return (steps + op_steps, new_stack + [new_result], current_is_first)
+            
+            raise ValueError(f"Unsupported token: {token}")
+
+        # Reduce the RPN queue to the final calculation state
+        initial_state = ([], [], True)
+        final_steps, final_result_stack, _ = functools.reduce(process_token, rpn_queue, initial_state)
+
+        if len(final_result_stack) != 1:
             raise ValueError("Invalid expression: the final stack should have one number.")
 
-        final_result = result_stack[0]
-        logging.info(f"Final steps: {[step.step_description for step in steps]}")
-        return steps
+        return final_steps

@@ -6,7 +6,7 @@
     - [x] Implement the calculation and placement of partial products.
     - [x] Implement the clearing of multiplier digits after they are used.
     - [x] Integrate the new `multiply` method into the `Calculator` class.
-- [ ] Implement division calculation for positive integers
+- [x] Implement division calculation for positive integers
 
 
 ## Do not implement the following tasks yet:

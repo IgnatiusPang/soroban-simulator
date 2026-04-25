@@ -6,7 +6,7 @@ class SorobanWidget(QWidget):
     """A widget that displays a soroban with animated bead movements."""
 
     def __init__(self, num_rods: int = 13):
-        """Initializes the soroban widget."""
+        """Initialises the soroban widget."""
         super().__init__()
         self.num_rods = num_rods
         self.soroban_state = [0] * num_rods
@@ -60,41 +60,40 @@ class SorobanWidget(QWidget):
         self.soroban_state = new_state
 
     def _get_bead_y_positions(self, value, rod_height, top_margin, bar_y, bar_height, bead_radius):
-        """Calculates the y-positions of all beads on a rod for a given value."""
-        positions = {}
-        
+        """Calculates the y-positions of all beads on a rod for a given value using functional dictionary comprehension."""
         # Heaven bead (index 4)
         heaven_active_y = bar_y - bar_height / 2 - bead_radius * 2
         heaven_inactive_y = top_margin
-        positions[4] = heaven_active_y if value >= 5 else heaven_inactive_y
-
-        # Earth beads (indices 0-3)
+        
+        # Earth beads (indices 0-3) - use dictionary comprehension to avoid for loop
         num_active = value % 5
         earth_bead_diameter = bead_radius * 2
         earth_bead_spacing = earth_bead_diameter + bead_radius / 2
 
-        for i in range(4):
-            if i < num_active:
-                # Active beads start from the bar and go down
-                positions[i] = bar_y + bar_height / 2 + i * earth_bead_spacing
-            else:
-                # Inactive beads start from the bottom and go up
-                positions[i] = top_margin + rod_height - (4 - i) * earth_bead_spacing
+        # Create the positions dictionary functionally
+        positions = {
+            4: heaven_active_y if value >= 5 else heaven_inactive_y
+        }
+        # Update with earth beads using dictionary comprehension
+        positions.update({
+            i: (bar_y + bar_height / 2 + i * earth_bead_spacing) if i < num_active
+            else (top_margin + rod_height - (4 - i) * earth_bead_spacing)
+            for i in range(4)
+        })
 
         return positions
 
     def paintEvent(self, event):
-        """Draws the soroban."""
+        """Draws the soroban using absolute functional patterns."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.fillRect(self.rect(), Qt.white)
 
         rod_width = self.width() / (self.num_rods + 1)
-        # Reserve more space at bottom for marker rows and top for rod numbers
-        marker_space = self.height() * 0.25  # 25% for markers (increased from 15%)
-        rod_number_space = self.height() * 0.12  # 12% for rod numbers at top (increased from 8%)
-        rod_height = self.height() * 0.48     # Reduced to accommodate larger top space
-        top_margin = self.height() * 0.15 + rod_number_space  # Increased top margin from 10% to 15%
+        marker_space = self.height() * 0.25
+        rod_number_space = self.height() * 0.12
+        rod_height = self.height() * 0.48
+        top_margin = self.height() * 0.15 + rod_number_space
         bar_height = 4
         bar_y = top_margin + rod_height * 0.3
         bead_radius = rod_width / 4
@@ -109,114 +108,68 @@ class SorobanWidget(QWidget):
         painter.setFont(font)
         painter.setPen(QPen(Qt.black, 1))
 
-        for i in range(self.num_rods):
-            # Reverse the rod order for display: rightmost rod (highest index) should be leftmost on screen
+        def draw_rod(i):
             display_rod_index = self.num_rods - 1 - i
             rod_x = (i + 1) * rod_width
             
-            # Draw rod number at the top (rod 1 is rightmost, rod 13 is leftmost)
+            # Draw rod number
             rod_number = display_rod_index + 1
             font_metrics = painter.fontMetrics()
             text_width = font_metrics.horizontalAdvance(str(rod_number))
-            text_x = rod_x - text_width / 2
-            text_y = self.height() * 0.05
-            painter.drawText(int(text_x), int(text_y), str(rod_number))
+            painter.drawText(int(rod_x - text_width / 2), int(self.height() * 0.05), str(rod_number))
             
             # Draw the rod
             painter.setPen(QPen(Qt.black, 2))
-            painter.drawLine(rod_x, top_margin, rod_x, top_margin + rod_height)
+            painter.drawLine(int(rod_x), int(top_margin), int(rod_x), int(top_margin + rod_height))
 
-            start_positions = self._get_bead_y_positions(self._start_state[display_rod_index], rod_height, top_margin, bar_y, bar_height, bead_radius)
-            end_positions = self._get_bead_y_positions(self._target_state[display_rod_index], rod_height, top_margin, bar_y, bar_height, bead_radius)
+            # Draw orienting dots
+            if (display_rod_index + 1) in [1, 4, 7, 10, 13]:
+                painter.setBrush(Qt.black)
+                painter.drawEllipse(int(rod_x - 3), int(bar_y - bar_height / 2 - 3), 6, 6)
 
-            # Heaven bead
-            start_y = start_positions[4]
-            end_y = end_positions[4]
-            current_y = start_y + (end_y - start_y) * self._animation_progress
+            start_p = self._get_bead_y_positions(self._start_state[display_rod_index], rod_height, top_margin, bar_y, bar_height, bead_radius)
+            end_p = self._get_bead_y_positions(self._target_state[display_rod_index], rod_height, top_margin, bar_y, bar_height, bead_radius)
+
+            # Draw heaven bead
             painter.setBrush(Qt.blue if self._target_state[display_rod_index] >= 5 else Qt.gray)
-            painter.drawEllipse(rod_x - bead_radius, current_y, bead_radius * 2, bead_radius * 2)
+            painter.drawEllipse(int(rod_x - bead_radius), int(start_p[4] + (end_p[4] - start_p[4]) * self._animation_progress), int(bead_radius * 2), int(bead_radius * 2))
 
-            # Earth beads
-            for j in range(4):
-                start_y = start_positions[j]
-                end_y = end_positions[j]
-                current_y = start_y + (end_y - start_y) * self._animation_progress
-                painter.setBrush(Qt.blue if j < self._target_state[display_rod_index] % 5 else Qt.gray)
-                painter.drawEllipse(rod_x - bead_radius, current_y, bead_radius * 2, bead_radius * 2)
+            # Draw earth beads using list comprehension
+            [painter.setBrush(Qt.blue if j < self._target_state[display_rod_index] % 5 else Qt.gray) or
+             painter.drawEllipse(int(rod_x - bead_radius), int(start_p[j] + (end_p[j] - start_p[j]) * self._animation_progress), int(bead_radius * 2), int(bead_radius * 2))
+             for j in range(4)]
 
-        # Draw markers with different vertical positions and color-blind safe colors
+        # Execute rod drawing for all rods
+        [draw_rod(i) for i in range(self.num_rods)]
+
+        # Draw markers with functional mapping
         if self.markers:
-            font = painter.font()
-            font.setPointSize(10)
-            painter.setFont(font)
-            
-            # Color-blind safe colors: Blue, Orange, Green
-            marker_colors = [
-                QColor(0, 114, 178),    # Blue for M1 (multiplier)
-                QColor(230, 159, 0),    # Orange for M2 (multiplicand) 
-                QColor(0, 158, 115)     # Green for PP (partial products)
-            ]
-            
-            # Stack markers vertically to avoid overlap
             marker_row_height = 25
             base_y = top_margin + rod_height + 10
-            
-            for i, marker in enumerate(self.markers):
-                # Handle both 3-value and 4-value marker formats
-                if len(marker) == 3:
-                    start_rod, end_rod, label = marker
-                    color_name = None
-                elif len(marker) == 4:
-                    start_rod, end_rod, label, color_name = marker
-                else:
-                    continue  # Skip invalid markers
-                # The markers use 0-based rod indices where:
-                # - Rod index 0 = Rod number 1 (rightmost rod)
-                # - Rod index 12 = Rod number 13 (leftmost rod)
-                # 
-                # The display uses reversed indexing:
-                # - display_rod_index = self.num_rods - 1 - loop_i
-                # - rod_x = (loop_i + 1) * rod_width
-                # 
-                # To find the correct x position for a rod index N:
-                # We need loop_i such that display_rod_index = N
-                # N = self.num_rods - 1 - loop_i
-                # loop_i = self.num_rods - 1 - N
+            marker_colours = [QColor(0, 114, 178), QColor(230, 159, 0), QColor(0, 158, 115)]
+            colour_map = {'blue': QColor(0, 114, 178), 'green': QColor(0, 158, 115), 'red': QColor(213, 94, 0), 'orange': QColor(230, 159, 0)}
+
+            def draw_marker(idx_marker):
+                i, marker = idx_marker
+                if len(marker) < 3: return
                 
-                start_loop_i = self.num_rods - 1 - start_rod
-                end_loop_i = self.num_rods - 1 - end_rod
+                start_rod, end_rod, label = marker[:3]
+                colour_name = marker[3] if len(marker) > 3 else None
                 
-                start_x = (start_loop_i + 1) * rod_width
-                end_x = (end_loop_i + 1) * rod_width
-                
-                # Ensure start_x is always to the left of end_x for proper line drawing
-                if start_x > end_x:
-                    start_x, end_x = end_x, start_x
+                # Correct rod-to-x conversion logic
+                start_x = (self.num_rods - start_rod) * rod_width
+                end_x = (self.num_rods - end_rod) * rod_width
+                if start_x > end_x: start_x, end_x = end_x, start_x
                 
                 line_y = base_y + i * marker_row_height
+                colour = colour_map.get(colour_name.lower() if colour_name else "", marker_colours[i % len(marker_colours)])
                 
-                # Use color from marker if available, otherwise use default colors
-                if color_name:
-                    # Map color names to QColor objects
-                    color_map = {
-                        'blue': QColor(0, 114, 178),
-                        'green': QColor(0, 158, 115), 
-                        'red': QColor(213, 94, 0),
-                        'orange': QColor(230, 159, 0)
-                    }
-                    color = color_map.get(color_name.lower(), marker_colors[i % len(marker_colors)])
-                else:
-                    # Use different color for each marker type (fallback)
-                    color = marker_colors[i % len(marker_colors)]
-                
-                painter.setPen(QPen(color, 2))
-
-                # Draw the line
+                painter.setPen(QPen(colour, 2))
                 painter.drawLine(int(start_x), int(line_y), int(end_x), int(line_y))
-
-                # Draw the label
+                
+                # Draw label
                 font_metrics = painter.fontMetrics()
                 text_width = font_metrics.horizontalAdvance(label)
-                text_x = start_x + (end_x - start_x) / 2 - text_width / 2
-                text_y = line_y + 15
-                painter.drawText(int(text_x), int(text_y), label)
+                painter.drawText(int(start_x + (end_x - start_x) / 2 - text_width / 2), int(line_y + 15), label)
+
+            [draw_marker(item) for item in enumerate(self.markers)]

@@ -1,3 +1,4 @@
+from decimal import Decimal
 
 import unittest
 import sys
@@ -72,44 +73,44 @@ class TestMultiplicationPositioning(unittest.TestCase):
         self.assertIsNotNone(m2_after_setup_step, "M2 (multiplicand 5) after setup step not found")
         
         # Check M2 positioning after it's fully set
-        expected_m2_rod = 3  # 0-indexed position for rod 4 (1-indexed)
-        
+        expected_m2_rod = 8  # 0-indexed position for rod 9 (1-indexed)
+    
         # Find where 5 is actually placed after setup
         m2_actual_positions = []
         for i, value in enumerate(m2_after_setup_step.soroban_state):
             if value != 0 and i == expected_m2_rod:  # Check if value is in expected M2 position
                 m2_actual_positions.append(i)
-        
+    
         print(f"M2 (5) positions after setup: {m2_actual_positions}")
         print(f"M2 (5) expected position: [{expected_m2_rod}]")
         print(f"M2 (5) state after setup: {m2_after_setup_step.soroban_state}")
-        
+    
         # Check final result positioning - PP = 75 should be on rods 1-2 (indices 0-1)
         final_step = steps[-1]
         expected_pp_rods = [0, 1]  # 0-indexed positions for rods 1-2 (1-indexed)
-        
+    
         # Find where 75 is actually placed
         pp_actual_positions = []
         for i, value in enumerate(final_step.soroban_state):
             if value != 0:
                 pp_actual_positions.append(i)
-        
+    
         print(f"PP (75) final positions: {pp_actual_positions}")
         print(f"PP (75) expected positions: {expected_pp_rods}")
         print(f"PP (75) final state: {final_step.soroban_state}")
-        
+    
         # Verify the final result is correct
         self.assertEqual(final_step.current_value, 75, "Final multiplication result should be 75")
-        
+    
         # Test the positioning requirements
         print(f"\nPOSITIONING VERIFICATION:")
-        
-        # M1 positioning: Should have 1 at index 9 and 5 at index 10 after setup
+    
+        # M1 positioning: Should have 1 at index 11 and 5 at index 12 after setup
         m1_correct = (len(m1_actual_positions) == 2 and 
                      set(m1_actual_positions) == set(expected_m1_rods))
         print(f"M1 (15) positioned correctly: {m1_correct}")
-        
-        # M2 positioning: Should have 5 at index 7 after setup  
+    
+        # M2 positioning: Should have 5 at index 8 after setup  
         m2_correct = (len(m2_actual_positions) == 1 and 
                      m2_actual_positions[0] == expected_m2_rod)
         print(f"M2 (5) positioned correctly: {m2_correct}")
