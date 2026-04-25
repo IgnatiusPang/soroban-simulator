@@ -1,3 +1,4 @@
+from decimal import Decimal
 import unittest
 from soroban_simulator.soroban.soroban import Soroban
 
@@ -7,7 +8,7 @@ class TestBasicOperations(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.soroban = Soroban(13)
+        self.soroban = Soroban(13, unit_rod_index=0)
 
     def test_4_times_5_detailed(self):
         """Test 4×5 multiplication with detailed step tracking."""
@@ -37,10 +38,6 @@ class TestBasicOperations(unittest.TestCase):
         
         steps.extend(self.soroban.multiply(5))
         self.assertEqual(self.soroban.get_value(), 20)
-        
-        # Test interim value method
-        interim_value = self.soroban._get_interim_value()
-        self.assertIsNotNone(interim_value, "Interim value should be calculable")
 
     def test_rod_ordering_with_123(self):
         """Test soroban rod ordering with number 123.

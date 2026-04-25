@@ -1,3 +1,4 @@
+from decimal import Decimal
 
 import unittest
 from soroban_simulator.soroban.parser import Parser
@@ -30,7 +31,7 @@ class TestParser(unittest.TestCase):
             parser.generate_rpn("(1 + 2")
 
     def test_division_operator_recognition(self):
-        """Tests that the division operator is recognized and parsed correctly."""
+        """Tests that the division operator is recognised and parsed correctly."""
         parser = Parser()
         rpn = parser.generate_rpn("10 / 2")
         self.assertEqual(rpn, [10, 2, '/'])

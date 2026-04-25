@@ -1,3 +1,4 @@
+from decimal import Decimal
 import unittest
 import sys
 import os
@@ -7,20 +8,20 @@ from soroban.soroban import Soroban
 
 class TestModernMultiplication(unittest.TestCase):
     def test_multiply_57_by_6(self):
-        soroban = Soroban(13)
+        soroban = Soroban(13, unit_rod_index=0)
         steps = soroban.set_number(57)
         steps.extend(soroban.multiply(6))
         self.assertEqual(soroban.get_value(), 342)
 
     def test_multiply_43_by_21(self):
-        soroban = Soroban(13)
+        soroban = Soroban(13, unit_rod_index=0)
         steps = soroban.set_number(43)
         steps.extend(soroban.multiply(21))
         self.assertEqual(soroban.get_value(), 903)
 
     def test_multiply_4_by_5(self):
         """Test 4*5 = 20 with expected result: 0 in ones place and 2 in tens place."""
-        soroban = Soroban(13)
+        soroban = Soroban(13, unit_rod_index=0)
         steps = soroban.set_number(4)
         steps.extend(soroban.multiply(5))
         

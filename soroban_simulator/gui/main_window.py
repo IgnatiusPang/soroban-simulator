@@ -9,7 +9,7 @@ class MainWindow(QMainWindow):
     """The main window of the Soroban Simulator."""
 
     def __init__(self):
-        """Initializes the main window."""
+        """Initialises the main window."""
         super().__init__()
 
         self.setWindowTitle("Soroban Simulator")
@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(800, 600)
         self.resize(1000, 700)  # Set a comfortable default size
 
-        self.calculator = Calculator()
+        self.calculator = Calculator(unit_rod_index=3)
         self.steps: list[CalculationStep] = []
         self.display_steps: list[CalculationStep] = []
         self.step_map: list[int] = []
@@ -93,11 +93,11 @@ class MainWindow(QMainWindow):
             self.display_steps = []
             self.step_map = []
             
-            for i, step in enumerate(self.steps):
-                if step.step_description:
-                    self.step_map.append(i)
-                    self.display_steps.append(step)
-                    self.steps_list_widget.addItem(step.step_description)
+            # Use comprehensions to populate step mapping and list widget
+            filtered_steps = [(i, s) for i, s in enumerate(self.steps) if s.step_description]
+            self.step_map = [i for i, s in filtered_steps]
+            self.display_steps = [s for i, s in filtered_steps]
+            [self.steps_list_widget.addItem(s.step_description) for s in self.display_steps]
 
             self.update_step_display(animated=False)
         except ValueError as e:
@@ -144,12 +144,10 @@ class MainWindow(QMainWindow):
         # Update active markers based on the current step
         if hasattr(step, 'markers') and step.markers:
             # Update active markers with new markers from this step
-            for marker in step.markers:
-                # Remove any existing marker with the same label
-                # Check both 3-element and 4-element marker formats
-                self.active_markers = [m for m in self.active_markers if len(m) < 3 or (len(m) >= 3 and m[2] != marker[2])]
-                # Add the new marker
-                self.active_markers.append(marker)
+            # Update active markers using dictionary to handle unique labels
+            marker_dict = {m[2]: m for m in self.active_markers if len(m) >= 3}
+            marker_dict.update({m[2]: m for m in step.markers if len(m) >= 3})
+            self.active_markers = list(marker_dict.values())
         
         # Only clear M1/M2 markers when we reach the final result step
         # This keeps them visible throughout the multiplication process
@@ -164,14 +162,8 @@ class MainWindow(QMainWindow):
         self.current_value_label.setText(f"Current value: {step.current_value}")
         
         # Update list widget selection
-        display_row = -1
-        for i, step_index in enumerate(self.step_map):
-            if step_index >= self.current_step:
-                if step_index == self.current_step:
-                    display_row = i
-                else:
-                    display_row = i -1
-                break
+        display_row = next((i if step_index == self.current_step else i - 1 
+                            for i, step_index in enumerate(self.step_map) if step_index >= self.current_step), -1)
         
         if display_row != -1:
             self.steps_list_widget.setCurrentRow(display_row)

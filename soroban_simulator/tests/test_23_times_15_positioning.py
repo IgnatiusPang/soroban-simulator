@@ -1,3 +1,4 @@
+from decimal import Decimal
 import unittest
 import sys
 import os

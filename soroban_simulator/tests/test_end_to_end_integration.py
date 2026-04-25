@@ -1,3 +1,4 @@
+from decimal import Decimal
 """
 End-to-End Integration Tests for Soroban Division
 
@@ -28,7 +29,7 @@ class TestEndToEndDivisionIntegration(unittest.TestCase):
         """Test complete division expression: 951/3 = 317.
         
         This test verifies the entire pipeline from string input to final result:
-        - Parser recognizes and converts "951/3" to RPN
+        - Parser recognises and converts "951/3" to RPN
         - Calculator processes the RPN correctly
         - Soroban division method produces correct result
         - All steps are generated with proper descriptions

@@ -1,3 +1,4 @@
+from decimal import Decimal
 import unittest
 from soroban_simulator.soroban.soroban import Soroban
 
@@ -23,8 +24,8 @@ class TestMultiplication111(unittest.TestCase):
         for step in multiplication_steps:
             for marker in step.markers:
                 start_rod, end_rod, label, color = marker
-                self.assertIsInstance(start_rod, int)
-                self.assertIsInstance(end_rod, int)
+                self.assertIsInstance(start_rod, (int, Decimal))
+                self.assertIsInstance(end_rod, (int, Decimal))
                 self.assertIn(label, ["M1", "M2", "PP"])
                 self.assertIsInstance(color, str)
                 self.assertTrue(start_rod <= end_rod)

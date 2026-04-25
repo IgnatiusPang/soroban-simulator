@@ -1,3 +1,4 @@
+from decimal import Decimal
 import unittest
 from soroban_simulator.soroban.calculator import Calculator
 from soroban_simulator.soroban.parser import Parser
@@ -17,7 +18,7 @@ class TestMarkerCalculations(unittest.TestCase):
         
         # Get the RPN parts
         parts = self.parser.generate_rpn(equation)
-        operands = [p for p in parts if isinstance(p, int)]
+        operands = [p for p in parts if isinstance(p, (int, Decimal))]
         
         self.assertEqual(len(operands), 2, "Should have exactly 2 operands")
         

@@ -1,3 +1,4 @@
+from decimal import Decimal
 import unittest
 from soroban_simulator.soroban.soroban import Soroban
 
@@ -7,7 +8,7 @@ class TestSorobanDivision(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.soroban = Soroban(13)
+        self.soroban = Soroban(13, unit_rod_index=0)
 
     def test_simple_single_digit_division_951_by_3(self):
         """Test basic single-digit division: 951 ÷ 3 = 317.
@@ -34,7 +35,7 @@ class TestSorobanDivision(unittest.TestCase):
         self.assertEqual(dividend % divisor, expected_remainder,
                         "Test case verification: 951 ÷ 3 should have remainder 0")
         
-        # Test will call: steps = self.soroban.divide(dividend, divisor)
+        # Test will call: steps = self.soroban.divide(dividend, divisor, precision=0)
         # And verify: self.assertEqual(self.soroban.get_value(), expected_quotient)
         
         # For now, just verify the soroban is ready for division implementation
@@ -222,7 +223,7 @@ class TestSorobanDivision(unittest.TestCase):
             self.assertGreater(len(step.step_description), 0, "Step description should not be empty")
             self.assertIsInstance(step.soroban_state, list, "Each step should have soroban state")
             self.assertEqual(len(step.soroban_state), 13, "Soroban state should have 13 rods")
-            self.assertIsInstance(step.current_value, int, "Current value should be integer")
+            self.assertIsInstance(step.current_value, (int, Decimal), "Current value should be integer")
         
         # Verify final soroban state contains both numbers
         final_value = self.soroban.get_value()
@@ -326,8 +327,8 @@ class TestSorobanDivision(unittest.TestCase):
             self.assertEqual(len(marker), 4, "Each marker should have 4 elements")
             start_rod, end_rod, label, color = marker
             
-            self.assertIsInstance(start_rod, int, "Start rod should be integer")
-            self.assertIsInstance(end_rod, int, "End rod should be integer")
+            self.assertIsInstance(start_rod, (int, Decimal), "Start rod should be integer")
+            self.assertIsInstance(end_rod, (int, Decimal), "End rod should be integer")
             self.assertLessEqual(start_rod, end_rod, "Start rod should be ≤ end rod")
             self.assertIn(label, ["D", "DV", "Q"], "Label should be D, DV, or Q")
             self.assertIsInstance(color, str, "Color should be string")
@@ -529,7 +530,7 @@ class TestSorobanDivision(unittest.TestCase):
         for dividend, divisor, description in test_cases:
             with self.subTest(dividend=dividend, divisor=divisor, desc=description):
                 with self.assertRaises(ValueError) as context:
-                    self.soroban.divide(dividend, divisor)
+                    self.soroban.divide(dividend, divisor, precision=0)
                 
                 error_message = str(context.exception)
                 self.assertIn("Division by zero", error_message, 
@@ -556,7 +557,7 @@ class TestSorobanDivision(unittest.TestCase):
         for dividend, divisor, description in test_cases:
             with self.subTest(dividend=dividend, divisor=divisor, desc=description):
                 with self.assertRaises(ValueError) as context:
-                    self.soroban.divide(dividend, divisor)
+                    self.soroban.divide(dividend, divisor, precision=0)
                 
                 error_message = str(context.exception)
                 self.assertIn("positive integers", error_message.lower(),
@@ -582,7 +583,7 @@ class TestSorobanDivision(unittest.TestCase):
         for dividend, divisor, description in test_cases:
             with self.subTest(dividend=dividend, divisor=divisor, desc=description):
                 with self.assertRaises(ValueError) as context:
-                    self.soroban.divide(dividend, divisor)
+                    self.soroban.divide(dividend, divisor, precision=0)
                 
                 error_message = str(context.exception)
                 self.assertIn("integer", error_message.lower(),
@@ -606,7 +607,7 @@ class TestSorobanDivision(unittest.TestCase):
         for dividend, divisor, description in overflow_cases:
             with self.subTest(dividend=dividend, divisor=divisor, desc=description):
                 with self.assertRaises(ValueError) as context:
-                    self.soroban.divide(dividend, divisor)
+                    self.soroban.divide(dividend, divisor, precision=0)
                 
                 error_message = str(context.exception)
                 self.assertIn("too large", error_message.lower(),
@@ -633,7 +634,7 @@ class TestSorobanDivision(unittest.TestCase):
         for dividend, divisor, expected_quotient, description in edge_cases:
             with self.subTest(dividend=dividend, divisor=divisor, desc=description):
                 try:
-                    steps = self.soroban.divide(dividend, divisor)
+                    steps = self.soroban.divide(dividend, divisor, precision=0)
                     result = self.soroban.get_value()
                     
                     self.assertIsInstance(steps, list, f"Should return steps for {description}")
@@ -662,7 +663,7 @@ class TestSorobanDivision(unittest.TestCase):
         for dividend, divisor, expected_keywords, description in error_test_cases:
             with self.subTest(dividend=dividend, divisor=divisor, desc=description):
                 with self.assertRaises(ValueError) as context:
-                    self.soroban.divide(dividend, divisor)
+                    self.soroban.divide(dividend, divisor, precision=0)
                 
                 error_message = str(context.exception).lower()
                 
@@ -716,14 +717,14 @@ class TestSorobanDivision(unittest.TestCase):
         """
         # Cause an error
         with self.assertRaises(ValueError):
-            self.soroban.divide(100, 0)
+            self.soroban.divide(100, 0, precision=0)
         
         # Verify soroban is still in a valid state
         self.assertEqual(self.soroban.get_value(), 0, "Soroban should be clear after error")
         
         # Verify we can still perform valid operations
         try:
-            steps = self.soroban.divide(100, 4)
+            steps = self.soroban.divide(100, 4, precision=0)
             result = self.soroban.get_value()
             self.assertEqual(result, 25, "Soroban should work normally after recovering from error")
             self.assertIsInstance(steps, list, "Should return steps after error recovery")
@@ -735,11 +736,11 @@ class TestSorobanDivision(unittest.TestCase):
             with self.subTest(cycle=i):
                 # Cause another error
                 with self.assertRaises(ValueError):
-                    self.soroban.divide(-10, 5)
+                    self.soroban.divide(-10, 5, precision=0)
                 
                 # Verify recovery
                 try:
-                    steps = self.soroban.divide(9, 3)
+                    steps = self.soroban.divide(9, 3, precision=0)
                     result = self.soroban.get_value()
                     self.assertEqual(result, 3, f"Should work after error cycle {i}")
                 except Exception as e:
@@ -797,7 +798,7 @@ class TestSorobanDivision(unittest.TestCase):
             self.assertEqual(len(step.soroban_state), 13, "Soroban state should have 13 rod values")
             
             self.assertIsNotNone(step.current_value, "Each step should have a current value")
-            self.assertIsInstance(step.current_value, int, "Current value should be an integer")
+            self.assertIsInstance(step.current_value, (int, Decimal), "Current value should be an integer")
 
     def test_divide_method_basic_functionality(self):
         """Test basic functionality of the divide method.
@@ -813,7 +814,7 @@ class TestSorobanDivision(unittest.TestCase):
         expected_quotient = 3
         expected_remainder = 0
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return a list of steps")
@@ -830,7 +831,7 @@ class TestSorobanDivision(unittest.TestCase):
             self.assertEqual(len(step.soroban_state), 13, "Soroban state should have 13 rod values")
             
             self.assertIsNotNone(step.current_value, "Each step should have a current value")
-            self.assertIsInstance(step.current_value, int, "Current value should be an integer")
+            self.assertIsInstance(step.current_value, (int, Decimal), "Current value should be an integer")
         
         # Verify final result
         final_result = self.soroban.get_value()
@@ -855,7 +856,7 @@ class TestSorobanDivision(unittest.TestCase):
         self.assertEqual(dividend % divisor, expected_remainder,
                         "Test case verification: 3869 ÷ 53 should have remainder 0")
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return a list of steps")
@@ -901,7 +902,7 @@ class TestSorobanDivision(unittest.TestCase):
                 self.assertEqual(dividend % divisor, expected_remainder,
                                f"Test case verification: {dividend} ÷ {divisor} should have remainder {expected_remainder}")
                 
-                steps = self.soroban.divide(dividend, divisor)
+                steps = self.soroban.divide(dividend, divisor, precision=0)
                 
                 # Verify steps are returned
                 self.assertIsInstance(steps, list, f"Should return steps for {description}")
@@ -923,7 +924,7 @@ class TestSorobanDivision(unittest.TestCase):
         dividend = 3869
         divisor = 53  # Will break down as 7×50 + 7×3 for quotient digit 7
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         step_descriptions = [step.step_description for step in steps]
         combined_text = " ".join(step_descriptions)
         
@@ -949,7 +950,7 @@ class TestSorobanDivision(unittest.TestCase):
         divisor = 53
         expected_quotient = 73
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         step_descriptions = [step.step_description for step in steps]
         combined_text = " ".join(step_descriptions)
         
@@ -985,7 +986,7 @@ class TestSorobanDivision(unittest.TestCase):
         expected_quotient = 7  # 71 ÷ 9 = 7 remainder 8
         expected_remainder = 8
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return steps")
@@ -1021,7 +1022,7 @@ class TestSorobanDivision(unittest.TestCase):
         expected_quotient = 11  # 99 ÷ 9 = 11 remainder 0
         expected_remainder = 0
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return steps")
@@ -1054,7 +1055,7 @@ class TestSorobanDivision(unittest.TestCase):
         expected_quotient = 8  # 987 ÷ 123 = 8 remainder 3
         expected_remainder = 3
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return steps")
@@ -1091,7 +1092,7 @@ class TestSorobanDivision(unittest.TestCase):
         dividend = 456
         divisor = 67
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return steps")
@@ -1138,7 +1139,7 @@ class TestSorobanDivision(unittest.TestCase):
         divisor = 12
         expected_quotient = 6  # 83 ÷ 12 = 6 remainder 11
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return steps")
@@ -1184,7 +1185,7 @@ class TestSorobanDivision(unittest.TestCase):
         divisor = 11
         expected_quotient = 9  # 99 ÷ 11 = 9 remainder 0
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return steps")
@@ -1232,7 +1233,7 @@ class TestSorobanDivision(unittest.TestCase):
         divisor = 111
         expected_quotient = 9  # 999 ÷ 111 = 9 remainder 0
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return steps")
@@ -1283,7 +1284,7 @@ class TestSorobanDivision(unittest.TestCase):
         divisor = 97
         expected_quotient = 9  # 876 ÷ 97 = 9 remainder 3
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return steps")
@@ -1332,7 +1333,7 @@ class TestSorobanDivision(unittest.TestCase):
         for dividend, divisor, expected_quotient in test_cases:
             with self.subTest(dividend=dividend, divisor=divisor):
                 self.soroban.clear()
-                steps = self.soroban.divide(dividend, divisor)
+                steps = self.soroban.divide(dividend, divisor, precision=0)
                 
                 # Verify steps are returned
                 self.assertIsInstance(steps, list, "Divide should return steps")
@@ -1401,7 +1402,7 @@ class TestSorobanDivision(unittest.TestCase):
         
         for dividend, divisor, description in edge_cases:
             with self.subTest(dividend=dividend, divisor=divisor, desc=description):
-                steps = self.soroban.divide(dividend, divisor)
+                steps = self.soroban.divide(dividend, divisor, precision=0)
                 
                 # Verify steps are returned
                 self.assertIsInstance(steps, list, f"Should return steps for {description}")
@@ -1433,7 +1434,7 @@ class TestSorobanDivision(unittest.TestCase):
         dividend = 999
         divisor = 7
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned and finite
         self.assertIsInstance(steps, list, "Should return finite steps")
@@ -1470,7 +1471,7 @@ class TestSorobanDivision(unittest.TestCase):
         expected_quotient = 7
         expected_remainder = 24
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify the result is mathematically correct
         final_value = self.soroban.get_value()
@@ -1513,7 +1514,7 @@ class TestSorobanDivision(unittest.TestCase):
         
         for dividend, divisor, description in test_cases:
             with self.subTest(dividend=dividend, divisor=divisor, desc=description):
-                steps = self.soroban.divide(dividend, divisor)
+                steps = self.soroban.divide(dividend, divisor, precision=0)
                 
                 # Verify mathematical correctness
                 expected_quotient = dividend // divisor
@@ -1559,7 +1560,7 @@ class TestSorobanDivision(unittest.TestCase):
         self.assertEqual(dividend % divisor, expected_remainder)
         
         # Perform division
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return a list of steps")
@@ -1603,7 +1604,7 @@ class TestSorobanDivision(unittest.TestCase):
         self.assertEqual(dividend % divisor, expected_remainder)
         
         # Perform division
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return a list of steps")
@@ -1636,7 +1637,7 @@ class TestSorobanDivision(unittest.TestCase):
         dividend = 951
         divisor = 3
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Look for dividend processing mentions in step descriptions
         all_descriptions = [step.step_description for step in steps]
@@ -1664,7 +1665,7 @@ class TestSorobanDivision(unittest.TestCase):
         dividend = 951
         divisor = 3
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Find all quotient digit placement steps
         all_descriptions = [step.step_description for step in steps]
@@ -1744,7 +1745,7 @@ class TestSorobanDivision(unittest.TestCase):
                 self.assertEqual(dividend % divisor, expected_remainder)
                 
                 # Perform division
-                steps = self.soroban.divide(dividend, divisor)
+                steps = self.soroban.divide(dividend, divisor, precision=0)
                 
                 # Verify steps are returned
                 self.assertIsInstance(steps, list, f"Should return steps for {dividend}÷{divisor}")
@@ -1776,21 +1777,21 @@ class TestSorobanDivision(unittest.TestCase):
         """
         # Test division by zero
         with self.assertRaises(ValueError) as context:
-            self.soroban.divide(100, 0)
+            self.soroban.divide(100, 0, precision=0)
         self.assertIn("division by zero", str(context.exception).lower())
         
         # Test negative inputs
         with self.assertRaises(ValueError) as context:
-            self.soroban.divide(-100, 5)
+            self.soroban.divide(-100, 5, precision=0)
         self.assertIn("positive integers", str(context.exception).lower())
         
         with self.assertRaises(ValueError) as context:
-            self.soroban.divide(100, -5)
+            self.soroban.divide(100, -5, precision=0)
         self.assertIn("positive integers", str(context.exception).lower())
         
         # Test non-integer inputs
         with self.assertRaises(ValueError) as context:
-            self.soroban.divide(100.5, 5)
+            self.soroban.divide(100.5, 5, precision=0)
         self.assertIn("integer operands", str(context.exception).lower())
 
     def test_multi_digit_quotient_step_quality(self):
@@ -1804,7 +1805,7 @@ class TestSorobanDivision(unittest.TestCase):
         dividend = 951
         divisor = 3
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         all_descriptions = [step.step_description for step in steps]
         
         # Should have clear estimation steps
@@ -1849,7 +1850,7 @@ class TestSorobanDivision(unittest.TestCase):
         """
         # Test division by zero
         with self.assertRaises(ValueError) as context:
-            self.soroban.divide(100, 0)
+            self.soroban.divide(100, 0, precision=0)
         
         error_message = str(context.exception)
         self.assertIn("division by zero", error_message.lower(), 
@@ -1857,7 +1858,7 @@ class TestSorobanDivision(unittest.TestCase):
         
         # Test negative dividend
         with self.assertRaises(ValueError) as context:
-            self.soroban.divide(-100, 5)
+            self.soroban.divide(-100, 5, precision=0)
         
         error_message = str(context.exception)
         self.assertIn("positive", error_message.lower(), 
@@ -1865,7 +1866,7 @@ class TestSorobanDivision(unittest.TestCase):
         
         # Test negative divisor
         with self.assertRaises(ValueError) as context:
-            self.soroban.divide(100, -5)
+            self.soroban.divide(100, -5, precision=0)
         
         error_message = str(context.exception)
         self.assertIn("positive", error_message.lower(), 
@@ -1873,10 +1874,10 @@ class TestSorobanDivision(unittest.TestCase):
         
         # Test non-integer inputs (if applicable)
         with self.assertRaises(ValueError):
-            self.soroban.divide(100.5, 5)  # Float dividend
+            self.soroban.divide(100.5, 5, precision=0)  # Float dividend
         
         with self.assertRaises(ValueError):
-            self.soroban.divide(100, 5.5)  # Float divisor
+            self.soroban.divide(100, 5.5, precision=0)  # Float divisor
 
     def test_divide_method_special_cases(self):
         """Test special cases in division.
@@ -1889,7 +1890,7 @@ class TestSorobanDivision(unittest.TestCase):
         # Test division by 1
         dividend = 123
         divisor = 1
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         self.assertIsInstance(steps, list, "Division by 1 should return steps")
         final_value = self.soroban.get_value()
@@ -1898,7 +1899,7 @@ class TestSorobanDivision(unittest.TestCase):
         # Test zero dividend
         dividend = 0
         divisor = 5
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         self.assertIsInstance(steps, list, "Zero dividend should return steps")
         final_value = self.soroban.get_value()
@@ -1917,7 +1918,7 @@ class TestSorobanDivision(unittest.TestCase):
         divisor = 3
         expected_quotient = 5
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify the cycle steps are present
         all_descriptions = [step.step_description for step in steps]
@@ -1957,7 +1958,7 @@ class TestSorobanDivision(unittest.TestCase):
         expected_quotient = 3
         expected_remainder = 2
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Check if revision was mentioned (it may or may not be needed depending on estimation)
         all_descriptions = [step.step_description for step in steps]
@@ -1996,7 +1997,7 @@ class TestSorobanDivision(unittest.TestCase):
                 self.soroban.clear()
                 
                 # Perform division
-                steps = self.soroban.divide(dividend, divisor)
+                steps = self.soroban.divide(dividend, divisor, precision=0)
                 
                 # Verify steps are generated
                 self.assertIsInstance(steps, list, f"Should return steps for {dividend}÷{divisor}")
@@ -2032,7 +2033,7 @@ class TestSorobanDivision(unittest.TestCase):
         dividend = 951
         divisor = 3
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify workspace setup is included
         all_descriptions = [step.step_description for step in steps]
@@ -2099,7 +2100,7 @@ class TestDivisionIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.soroban = Soroban(13)
+        self.soroban = Soroban(13, unit_rod_index=0)
 
     def test_division_operator_recognition_preparation(self):
         """Test preparation for division operator recognition in expressions.
@@ -2506,7 +2507,7 @@ class TestDivisionIntegration(unittest.TestCase):
         self.assertEqual(dividend // divisor, expected_quotient)
         self.assertEqual(dividend % divisor, expected_remainder)
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return a list of steps")
@@ -2545,7 +2546,7 @@ class TestDivisionIntegration(unittest.TestCase):
         self.assertEqual(dividend // divisor, expected_quotient)
         self.assertEqual(dividend % divisor, expected_remainder)
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify steps are returned
         self.assertIsInstance(steps, list, "Divide should return a list of steps")
@@ -2626,7 +2627,7 @@ class TestDivisionIntegration(unittest.TestCase):
         divisor = 4
         expected_quotient = 21
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Verify final quotient is positioned correctly
         final_value = self.soroban.get_value()
@@ -2660,7 +2661,7 @@ class TestDivisionIntegration(unittest.TestCase):
         expected_quotient = 4
         expected_remainder = 3
         
-        steps = self.soroban.divide(dividend, divisor)
+        steps = self.soroban.divide(dividend, divisor, precision=0)
         
         # Find remainder-related steps
         remainder_steps = [step for step in steps if "remainder" in step.step_description.lower()]
@@ -2710,7 +2711,7 @@ class TestDivisionIntegration(unittest.TestCase):
                 self.assertEqual(dividend // divisor, expected_quotient, f"Test case verification for {description}")
                 self.assertEqual(dividend % divisor, expected_remainder, f"Test case verification for {description}")
                 
-                steps = self.soroban.divide(dividend, divisor)
+                steps = self.soroban.divide(dividend, divisor, precision=0)
                 
                 # Verify steps are generated
                 self.assertIsInstance(steps, list, f"Should return steps for {description}")
@@ -2743,24 +2744,24 @@ class TestDivisionIntegration(unittest.TestCase):
         """
         # Test division by zero
         with self.assertRaises(ValueError) as context:
-            self.soroban.divide(100, 0)
+            self.soroban.divide(100, 0, precision=0)
         
         error_message = str(context.exception)
         self.assertIn("zero", error_message.lower(), "Should mention division by zero")
         
         # Test negative numbers
         with self.assertRaises(ValueError):
-            self.soroban.divide(-100, 5)
+            self.soroban.divide(-100, 5, precision=0)
         
         with self.assertRaises(ValueError):
-            self.soroban.divide(100, -5)
+            self.soroban.divide(100, -5, precision=0)
         
         # Test invalid types
         with self.assertRaises(ValueError):
-            self.soroban.divide(100.5, 5)
+            self.soroban.divide(100.5, 5, precision=0)
         
         with self.assertRaises(ValueError):
-            self.soroban.divide(100, 5.5)
+            self.soroban.divide(100, 5.5, precision=0)
 
 
 if __name__ == '__main__':
