@@ -86,6 +86,8 @@ class Soroban:
         num_dec = Decimal(str(number)).normalize()
         scaled = int(round(num_dec * (Decimal(10) ** self.unit_rod_index)))
         s_str = str(abs(scaled))
+        if len(s_str) > self.num_rods:
+            raise ValueError(f'Number {num_dec} exceeds soroban capacity of {self.num_rods} rods')
         steps = [CalculationStep(f"Set number {num_dec}", self.get_state(), self.get_value())]
         steps.extend([st for i, c in enumerate(reversed(s_str)) if i < self.num_rods for st in self._set_rod_value(i, int(c))])
         return steps
@@ -102,6 +104,8 @@ class Soroban:
     def subtract(self, number: Union[int, Decimal]) -> List[CalculationStep]:
         """Subtracts a number using functional digit processing."""
         num_dec = Decimal(str(number)).normalize()
+        if num_dec > self.get_value():
+            raise ValueError(f'Cannot subtract {number} from {self.get_value()}: negative results not supported on Soroban')
         scaled = int(round(num_dec * (Decimal(10) ** self.unit_rod_index)))
         s_str = str(abs(scaled))
         steps = [CalculationStep(f"Subtract {number}", self.get_state(), self.get_value())]
@@ -273,8 +277,8 @@ class Soroban:
         d1_str = v1_str_clean + ('0' * precision)
         
         def shojohou(idx, wd, cur_steps, q_accum):
-            if idx >= len(d1_str) or (idx >= len(v1_str_clean) and wd == 0): 
-                return wd, cur_steps, q_accum
+            if idx >= len(d1_str) or (idx >= len(v1_str_clean) and wd == 0):
+                return wd, cur_steps, q_accum, idx
             
             digit = int(d1_str[idx])
             nwd = wd * 10 + digit
@@ -324,10 +328,11 @@ class Soroban:
             
             return shojohou(idx + 1, final_nwd, cur_steps, q_accum * 10 + fq)
 
-        final_rem, all_steps, final_q = shojohou(0, 0, steps, 0)
+        final_rem, all_steps, final_q, final_idx = shojohou(0, 0, steps, 0)
         all_steps.extend(self._detect_and_display_remainder(final_rem, v2, final_q, v1))
         
-        quotient = Decimal(final_q) / (Decimal(10) ** precision)
+        actual_precision = max(0, final_idx - len(v1_str_clean))
+        quotient = Decimal(final_q) / (Decimal(10) ** actual_precision)
         all_steps.extend(self.set_number(quotient))
         
         final_val = self.get_value()

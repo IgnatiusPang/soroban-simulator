@@ -2749,6 +2749,38 @@ class TestDivisionIntegration(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.soroban.divide(100, 5.5, precision=0)
 
+    def test_decimal_fractional_division_precision_scaling(self):
+        """Test decimal division with fractional precision (fixes power-of-10 early exit scale bug)."""
+        soroban = Soroban(13, unit_rod_index=3)
+
+        # 1 / 2 = 0.5 (with precision 2)
+        soroban.divide(1, 2, precision=2)
+        self.assertEqual(soroban.get_value(), Decimal("0.5"), "1 / 2 with precision 2 must equal 0.5")
+
+        # 1 / 4 = 0.25 (with precision 3)
+        soroban = Soroban(13, unit_rod_index=3)
+        soroban.divide(1, 4, precision=3)
+        self.assertEqual(soroban.get_value(), Decimal("0.25"), "1 / 4 with precision 3 must equal 0.25")
+
+        # 3 / 2 = 1.5 (with precision 3)
+        soroban = Soroban(13, unit_rod_index=3)
+        soroban.divide(3, 2, precision=3)
+        self.assertEqual(soroban.get_value(), Decimal("1.5"), "3 / 2 with precision 3 must equal 1.5")
+
+    def test_soroban_invariants_capacity_and_underflow(self):
+        """Test physical soroban capacity and non-negative subtraction guards."""
+        soroban = Soroban(5, unit_rod_index=0)
+
+        # Setting 6-digit number on 5-rod soroban must raise ValueError
+        with self.assertRaises(ValueError):
+            soroban.set_number(123456)
+
+        # Subtraction underflow: 3 - 5 must raise ValueError rather than wrapping modulo 10^N
+        soroban = Soroban(5, unit_rod_index=0)
+        soroban.set_number(3)
+        with self.assertRaises(ValueError):
+            soroban.subtract(5)
+
 
 if __name__ == '__main__':
     unittest.main()
