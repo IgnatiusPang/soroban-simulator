@@ -55,5 +55,27 @@ class TestDecimals(unittest.TestCase):
         expected_rods = [0, 8, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.assertEqual(steps[-1].soroban_state, expected_rods)
 
+    def test_decimal_division(self):
+        # 1.2 / 3 = 0.4 with precision 3
+        self.soroban.divide(Decimal("1.2"), Decimal("3"), precision=3)
+        self.assertEqual(self.soroban.get_value(), Decimal("0.4"))
+
+        # 0.5 / 2 = 0.25 with precision 2
+        self.soroban.divide(Decimal("0.5"), Decimal("2"), precision=2)
+        self.assertEqual(self.soroban.get_value(), Decimal("0.25"))
+
+        # 0.5 / 0.25 = 2 with precision 2
+        self.soroban.divide(Decimal("0.5"), Decimal("0.25"), precision=2)
+        self.assertEqual(self.soroban.get_value(), Decimal("2"))
+
+    def test_decimal_division_calculator(self):
+        # Calculator with unit_rod_index=3 supports decimal division
+        steps = self.calculator.calculate("1.2 / 3")
+        self.assertEqual(steps[-1].current_value, Decimal("0.4"))
+
+        steps = self.calculator.calculate("3 / 2")
+        self.assertEqual(steps[-1].current_value, Decimal("1.5"))
+
 if __name__ == '__main__':
     unittest.main()
+

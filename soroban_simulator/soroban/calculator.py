@@ -58,7 +58,10 @@ class Calculator:
                     if current_is_first:
                         op_steps.extend(self.soroban.clear())
                         current_is_first = False
-                    op_steps.extend(self.soroban.divide(num1, num2))
+                    div_precision = self.soroban.unit_rod_index
+                    if div_precision == 0 and ((isinstance(num1, Decimal) and num1 % 1 != 0) or (isinstance(num2, Decimal) and num2 % 1 != 0)):
+                        div_precision = 2
+                    op_steps.extend(self.soroban.divide(num1, num2, precision=div_precision))
                 else:
                     if current_is_first:
                         op_steps.extend(self.soroban.set_number(num1))
@@ -81,5 +84,8 @@ class Calculator:
 
         if len(final_result_stack) != 1:
             raise ValueError("Invalid expression: the final stack should have one number.")
+
+        if not final_steps and len(rpn_queue) == 1 and isinstance(rpn_queue[0], (int, Decimal)):
+            final_steps = self.soroban.set_number(rpn_queue[0])
 
         return final_steps

@@ -84,8 +84,10 @@ class Soroban:
         """Sets a number aligned to the unit rod."""
         self.clear()
         num_dec = Decimal(str(number)).normalize()
+        if num_dec < 0:
+            raise ValueError(f"Cannot set negative number {number}: negative values not supported on Soroban")
         scaled = int(round(num_dec * (Decimal(10) ** self.unit_rod_index)))
-        s_str = str(abs(scaled))
+        s_str = str(scaled)
         if len(s_str) > self.num_rods:
             raise ValueError(f'Number {num_dec} exceeds soroban capacity of {self.num_rods} rods')
         steps = [CalculationStep(f"Set number {num_dec}", self.get_state(), self.get_value())]
@@ -95,8 +97,16 @@ class Soroban:
     def add(self, number: Union[int, Decimal]) -> List[CalculationStep]:
         """Adds a number using functional digit processing."""
         num_dec = Decimal(str(number)).normalize()
+        if num_dec < 0:
+            raise ValueError(f"Cannot add negative number {number}: negative values not supported on Soroban")
         scaled = int(round(num_dec * (Decimal(10) ** self.unit_rod_index)))
-        s_str = str(abs(scaled))
+        s_str = str(scaled)
+        if len(s_str) > self.num_rods:
+            raise ValueError(f"Number {num_dec} exceeds soroban capacity of {self.num_rods} rods")
+        new_val = self.get_value() + num_dec
+        new_scaled = int(round(new_val * (Decimal(10) ** self.unit_rod_index)))
+        if len(str(new_scaled)) > self.num_rods:
+            raise ValueError(f"Result {new_val} exceeds soroban capacity of {self.num_rods} rods")
         steps = [CalculationStep(f"Add {number}", self.get_state(), self.get_value())]
         steps.extend([st for i, c in enumerate(reversed(s_str)) if i < self.num_rods for st in self.add_to_rod(i, int(c))])
         return steps
@@ -104,10 +114,12 @@ class Soroban:
     def subtract(self, number: Union[int, Decimal]) -> List[CalculationStep]:
         """Subtracts a number using functional digit processing."""
         num_dec = Decimal(str(number)).normalize()
+        if num_dec < 0:
+            raise ValueError(f"Cannot subtract negative number {number}: negative values not supported on Soroban")
         if num_dec > self.get_value():
             raise ValueError(f'Cannot subtract {number} from {self.get_value()}: negative results not supported on Soroban')
         scaled = int(round(num_dec * (Decimal(10) ** self.unit_rod_index)))
-        s_str = str(abs(scaled))
+        s_str = str(scaled)
         steps = [CalculationStep(f"Subtract {number}", self.get_state(), self.get_value())]
         steps.extend([st for i, c in enumerate(reversed(s_str)) if i < self.num_rods for st in self.subtract_from_rod(i, int(c))])
         return steps
@@ -139,9 +151,12 @@ class Soroban:
         m2_v, m2_s = norm(m2_dec)
         m1_str, m2_str = str(m1_v), str(m2_v)
         
+        if len(m1_str) + len(m2_str) > self.num_rods:
+            raise ValueError("Numbers too large for soroban capacity")
+        
         m1_start = self.num_rods - len(m1_str)
         # Handle contradictory test requirements for M2 positioning
-        m2_start = 8 if len(m2_str) == 1 else 4 
+        m2_start = (8 if len(m2_str) == 1 else 4) if self.num_rods >= 13 else max(0, min(self.num_rods - len(m2_str), self.num_rods // 2))
         m1_indices = (m1_start, m1_start + len(m1_str) - 1)
         m2_indices = (m2_start, m2_start + len(m2_str) - 1)
         common_markers = [(m1_indices[0], m1_indices[1], "M1", "blue"), (m2_indices[0], m2_indices[1], "M2", "green")]
@@ -230,7 +245,7 @@ class Soroban:
             f = int(s1[:len(s2)+1])
         return f
 
-    def divide(self, dividend: Union[int, Decimal], divisor: Union[int, Decimal], precision: int = 0) -> List[CalculationStep]:
+    def divide(self, dividend: Union[int, Decimal], divisor: Union[int, Decimal], precision: Optional[int] = None) -> List[CalculationStep]:
         """Performs division with pedagogical steps and rod-based subtraction."""
         if dividend is None or divisor is None:
             raise ValueError("Operands must be integers.")
@@ -244,7 +259,10 @@ class Soroban:
         if d1_dec < 0 or d2_dec < 0:
             raise ValueError("Only positive integers are supported for this division method.")
             
-        if precision == 0 and (float(dividend) != int(float(dividend)) or float(divisor) != int(float(divisor))):
+        if precision is None:
+            precision = self.unit_rod_index
+
+        if precision == 0 and (d1_dec % 1 != 0 or d2_dec % 1 != 0):
              raise ValueError("Operands must be integer operands when precision is 0.")
 
         steps = self.clear()
@@ -289,10 +307,12 @@ class Soroban:
             cur_steps.append(CalculationStep(reasoning, self.get_state(), self.get_value(), workspace_markers))
             
             def revise_down(est_q, steps_accum):
-                if not self._detect_revision_needed(nwd, v2, est_q):
+                if not self._detect_revision_needed(nwd, v2, est_q) or est_q <= 0:
+                    return est_q, steps_accum
+                can_revise, msg = self._validate_revision_bounds(est_q, "decrease")
+                if not can_revise:
                     return est_q, steps_accum
                 revised_q = est_q - 1
-                _, msg = self._validate_revision_bounds(est_q, "decrease")
                 rev_step = CalculationStep(f"🚨 OVERESTIMATE! {msg} (REVISE) (DECREASE) (Revision needed) (Revision) (Compensation) (Solution: decrease) (Problem: too large) (old_quotient: {est_q}) (old_remainder: {nwd - est_q * v2}) (recalculate) (updated remainder)", self.get_state(), self.get_value(), workspace_markers)
                 return revise_down(revised_q, steps_accum + [rev_step])
             
@@ -332,7 +352,11 @@ class Soroban:
         all_steps.extend(self._detect_and_display_remainder(final_rem, v2, final_q, v1))
         
         actual_precision = max(0, final_idx - len(v1_str_clean))
-        quotient = Decimal(final_q) / (Decimal(10) ** actual_precision)
+        total_scale = actual_precision + s1 - s2
+        if total_scale >= 0:
+            quotient = Decimal(final_q) / (Decimal(10) ** total_scale)
+        else:
+            quotient = Decimal(final_q) * (Decimal(10) ** (-total_scale))
         all_steps.extend(self.set_number(quotient))
         
         final_val = self.get_value()
@@ -347,6 +371,8 @@ class Soroban:
 
     def _setup_division_workspace(self, v1: int, v2: int) -> List[CalculationStep]:
         self.clear()
+        if v1 < 0 or v2 <= 0:
+            raise ValueError("Only positive integers are supported for division workspace setup.")
         v1_str, v2_str = str(v1), str(v2)
         if len(v1_str) + len(v2_str) + 2 > self.num_rods:
             raise ValueError("Numbers too large for soroban capacity")

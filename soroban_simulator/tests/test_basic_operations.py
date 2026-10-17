@@ -95,6 +95,38 @@ class TestBasicOperations(unittest.TestCase):
         for i, value in enumerate(state):
             self.assertEqual(value, 0, f"Rod {i+1} should be zero after clear")
 
+    def test_negative_guards(self):
+        """Test that negative numbers are rejected on Soroban."""
+        with self.assertRaises(ValueError):
+            self.soroban.set_number(-5)
+
+        with self.assertRaises(ValueError):
+            self.soroban.add(-5)
+
+        with self.assertRaises(ValueError):
+            self.soroban.subtract(-5)
+
+    def test_capacity_guards(self):
+        """Test capacity limits for addition and multiplication."""
+        from soroban_simulator.soroban.soroban import Soroban
+        small = Soroban(3)
+        small.set_number(999)
+        with self.assertRaises(ValueError):
+            small.add(1)
+
+        with self.assertRaises(ValueError):
+            small.add(1000)
+
+        # Test small soroban multiplication succeeds within capacity
+        s7 = Soroban(7)
+        s7.multiply(3, 2)
+        self.assertEqual(s7.get_value(), 6)
+
+        # Test small soroban multiplication exceeds capacity
+        with self.assertRaises(ValueError):
+            s7.multiply(12345, 67890)
+
 
 if __name__ == '__main__':
     unittest.main()
+
