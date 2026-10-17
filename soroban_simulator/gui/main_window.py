@@ -1,7 +1,22 @@
+import os
+import sys
 
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox, QListWidget
-from PySide6.QtCore import Qt
-from .soroban_widget import SorobanWidget
+# Ensure repository root is in sys.path for standalone or sandboxed execution
+_repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _repo_root not in sys.path:
+    sys.path.insert(0, _repo_root)
+
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QLineEdit, QPushButton, QLabel, QMessageBox, QListWidget
+)
+from PySide6.QtCore import Qt, QPropertyAnimation
+
+try:
+    from .soroban_widget import SorobanWidget
+except ImportError:
+    from soroban_simulator.gui.soroban_widget import SorobanWidget
+
 from soroban_simulator.soroban.calculator import Calculator
 from soroban_simulator.soroban.calculation_step import CalculationStep
 
@@ -10,6 +25,8 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         """Initialises the main window."""
+        if QApplication.instance() is None:
+            self._app = QApplication(sys.argv if sys.argv else ["soroban_simulator"])
         super().__init__()
 
         self.setWindowTitle("Soroban Simulator")
@@ -25,6 +42,7 @@ class MainWindow(QMainWindow):
         self.step_map: list[int] = []
         self.current_step = 0
         self.active_markers = []  # Track active markers throughout the calculation
+        self.result = 0
 
         # Create widgets
         self.equation_input = QLineEdit()
@@ -68,6 +86,7 @@ class MainWindow(QMainWindow):
 
         # Connect signals
         self.calculate_button.clicked.connect(self.calculate)
+        self.equation_input.returnPressed.connect(self.calculate)
         self.refresh_button.clicked.connect(self.refresh)
         self.previous_button.clicked.connect(self.previous_step)
         self.next_button.clicked.connect(self.next_step)
@@ -76,9 +95,24 @@ class MainWindow(QMainWindow):
 
         self.refresh()
 
+    def _get_markers_at_step(self, step_index: int) -> list:
+        """Determines the active markers at a given step index deterministically."""
+        if not self.steps or step_index < 0:
+            return []
+        
+        marker_dict = {}
+        for s in self.steps[:step_index + 1]:
+            if "Clear soroban" in s.step_description:
+                marker_dict.clear()
+            elif hasattr(s, 'markers') and s.markers:
+                for m in s.markers:
+                    if len(m) >= 3:
+                        marker_dict[m[2]] = m
+        return list(marker_dict.values())
+
     def calculate(self):
         """Calculates the equation and displays the first step."""
-        equation = self.equation_input.text()
+        equation = self.equation_input.text().strip()
         if not equation:
             return
 
@@ -93,24 +127,39 @@ class MainWindow(QMainWindow):
             self.display_steps = []
             self.step_map = []
             
-            # Use comprehensions to populate step mapping and list widget
+            # Populate step mapping and list widget
             filtered_steps = [(i, s) for i, s in enumerate(self.steps) if s.step_description]
             self.step_map = [i for i, s in filtered_steps]
             self.display_steps = [s for i, s in filtered_steps]
-            [self.steps_list_widget.addItem(s.step_description) for s in self.display_steps]
+            for s in self.display_steps:
+                self.steps_list_widget.addItem(s.step_description)
 
             self.update_step_display(animated=False)
-        except ValueError as e:
+        except Exception as e:
+            self.steps = []
+            self.display_steps = []
+            self.step_map = []
+            self.current_step = 0
+            self.steps_list_widget.clear()
+            self.update_step_display(animated=False)
             QMessageBox.warning(self, "Error", str(e))
 
     def previous_step(self):
         """Displays the previous step."""
+        if self.soroban_widget._animation.state() == QPropertyAnimation.Running:
+            self.soroban_widget._animation.stop()
+            self.soroban_widget.set_state(self.soroban_widget._target_state)
+            self.on_animation_finished()
         if self.current_step > 0:
             self.current_step -= 1
             self.update_step_display()
 
     def next_step(self):
         """Displays the next step."""
+        if self.soroban_widget._animation.state() == QPropertyAnimation.Running:
+            self.soroban_widget._animation.stop()
+            self.soroban_widget.set_state(self.soroban_widget._target_state)
+            self.on_animation_finished()
         if self.current_step < len(self.steps) - 1:
             self.current_step += 1
             self.update_step_display()
@@ -129,10 +178,14 @@ class MainWindow(QMainWindow):
             self.completion_label.hide()
             self.previous_button.setEnabled(False)
             self.next_button.setEnabled(False)
+            self.steps_list_widget.setEnabled(True)
+            self.step_description_label.setText("Step description:")
+            self.current_value_label.setText("Current value:")
+            self.soroban_widget.set_markers([])
             return
 
         step = self.steps[self.current_step]
-        if animated:
+        if animated and self.soroban_widget.soroban_state != step.soroban_state:
             self.previous_button.setEnabled(False)
             self.next_button.setEnabled(False)
             self.steps_list_widget.setEnabled(False)
@@ -141,40 +194,32 @@ class MainWindow(QMainWindow):
             self.soroban_widget.set_state(step.soroban_state)
             self.on_animation_finished() # Manually call to update UI state
 
-        # Update active markers based on the current step
-        if hasattr(step, 'markers') and step.markers:
-            # Update active markers with new markers from this step
-            # Update active markers using dictionary to handle unique labels
-            marker_dict = {m[2]: m for m in self.active_markers if len(m) >= 3}
-            marker_dict.update({m[2]: m for m in step.markers if len(m) >= 3})
-            self.active_markers = list(marker_dict.values())
-        
-        # Only clear M1/M2 markers when we reach the final result step
-        # This keeps them visible throughout the multiplication process
-        if "Final result" in step.step_description:
-            # Keep all markers for the final result, but M1/M2 will be naturally replaced by PP
-            pass
-        
-        # Set the accumulated markers
+        # Update active markers deterministically based on the current step
+        self.active_markers = self._get_markers_at_step(self.current_step)
         self.soroban_widget.set_markers(self.active_markers)
 
         self.step_description_label.setText(f"Step description: {step.step_description}")
         self.current_value_label.setText(f"Current value: {step.current_value}")
         
-        # Update list widget selection
-        display_row = next((i if step_index == self.current_step else i - 1 
-                            for i, step_index in enumerate(self.step_map) if step_index >= self.current_step), -1)
-        
-        if display_row != -1:
-            self.steps_list_widget.setCurrentRow(display_row)
+        # Update list widget selection without recursive signal loop
+        if self.step_map:
+            display_row = next((i if step_index == self.current_step else max(0, i - 1) 
+                                for i, step_index in enumerate(self.step_map) if step_index >= self.current_step),
+                               len(self.display_steps) - 1)
+            
+            if 0 <= display_row < self.steps_list_widget.count():
+                self.steps_list_widget.blockSignals(True)
+                self.steps_list_widget.setCurrentRow(display_row)
+                self.steps_list_widget.blockSignals(False)
 
     def on_animation_finished(self):
         """Called when the soroban animation finishes."""
-        self.previous_button.setEnabled(self.current_step > 0)
-        self.next_button.setEnabled(self.current_step < len(self.steps) - 1)
+        has_steps = bool(self.steps)
+        self.previous_button.setEnabled(has_steps and self.current_step > 0)
+        self.next_button.setEnabled(has_steps and self.current_step < len(self.steps) - 1)
         self.steps_list_widget.setEnabled(True)
 
-        if self.current_step == len(self.steps) - 1:
+        if has_steps and self.current_step == len(self.steps) - 1:
             self.completion_label.show()
         else:
             self.completion_label.hide()
@@ -187,6 +232,7 @@ class MainWindow(QMainWindow):
         self.step_map = []
         self.current_step = 0
         self.active_markers = []  # Clear active markers
+        self.result = 0
         self.calculator.soroban.clear()
         self.soroban_widget.set_markers([])
         self.soroban_widget.set_state(self.calculator.soroban.get_state())
@@ -194,3 +240,14 @@ class MainWindow(QMainWindow):
         self.current_value_label.setText("Current value:")
         self.steps_list_widget.clear()
         self.update_step_display(animated=False)
+
+    def keyPressEvent(self, event):
+        """Handles arrow key navigation when input does not have focus."""
+        if not self.equation_input.hasFocus():
+            if event.key() == Qt.Key_Left:
+                self.previous_step()
+                return
+            elif event.key() == Qt.Key_Right:
+                self.next_step()
+                return
+        super().keyPressEvent(event)
