@@ -126,6 +126,26 @@ class TestBasicOperations(unittest.TestCase):
         with self.assertRaises(ValueError):
             s7.multiply(12345, 67890)
 
+    def test_initialization_bounds(self):
+        """Test validation of num_rods and unit_rod_index."""
+        from soroban_simulator.soroban.soroban import Soroban
+        with self.assertRaises(ValueError):
+            Soroban(num_rods=0)
+        with self.assertRaises(ValueError):
+            Soroban(num_rods=-5)
+        with self.assertRaises(ValueError):
+            Soroban(num_rods=5, unit_rod_index=-1)
+        with self.assertRaises(ValueError):
+            Soroban(num_rods=5, unit_rod_index=5)
+
+    def test_get_value_empty_rods(self):
+        """Test get_value handles empty rods without AttributeError."""
+        from decimal import Decimal
+        from soroban_simulator.soroban.soroban import Soroban
+        s = Soroban(1)
+        s.rods = []
+        self.assertEqual(s.get_value(), Decimal(0))
+
 
 if __name__ == '__main__':
     unittest.main()

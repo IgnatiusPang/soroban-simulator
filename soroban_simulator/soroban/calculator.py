@@ -1,9 +1,14 @@
 
 import functools
 from decimal import Decimal
-from .soroban import Soroban
-from .parser import Parser
-from .calculation_step import CalculationStep
+try:
+    from .soroban import Soroban
+    from .parser import Parser
+    from .calculation_step import CalculationStep
+except ImportError:
+    from soroban_simulator.soroban.soroban import Soroban
+    from soroban_simulator.soroban.parser import Parser
+    from soroban_simulator.soroban.calculation_step import CalculationStep
 import logging
 
 logging.basicConfig(level=logging.INFO)

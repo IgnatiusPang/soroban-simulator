@@ -1,7 +1,10 @@
 
 from decimal import Decimal, Context, ROUND_HALF_UP
 from typing import List, Union, Tuple, Optional
-from .calculation_step import CalculationStep
+try:
+    from .calculation_step import CalculationStep
+except ImportError:
+    from soroban_simulator.soroban.calculation_step import CalculationStep
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -20,6 +23,10 @@ class Soroban:
             num_rods: Total number of rods.
             unit_rod_index: Index of the rod representing 10^0 (from right).
         """
+        if num_rods <= 0:
+            raise ValueError(f"num_rods must be positive, got {num_rods}")
+        if unit_rod_index < 0 or unit_rod_index >= num_rods:
+            raise ValueError(f"unit_rod_index must be in range [0, {num_rods - 1}], got {unit_rod_index}")
         self.num_rods = num_rods
         self.unit_rod_index = unit_rod_index
         self.rods = [0] * num_rods
@@ -36,9 +43,12 @@ class Soroban:
 
     def get_value(self) -> Decimal:
         """Calculates total numeric value using functional sum."""
+        if not self.rods:
+            return Decimal(0)
         return sum(
-            Decimal(val) * (Decimal(10) ** (i - self.unit_rod_index))
-            for i, val in enumerate(self.rods)
+            (Decimal(val) * (Decimal(10) ** (i - self.unit_rod_index))
+            for i, val in enumerate(self.rods)),
+            Decimal(0)
         ).normalize()
 
     def _subtract_from_rods_left_aligned(self, start_rod_index: int, number: int) -> List[CalculationStep]:
